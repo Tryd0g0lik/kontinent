@@ -1,10 +1,11 @@
 from django.db import models
 from django.core import validators
 from django.utils.translation import gettext_lazy as _
-from content.models import MiddleContentPageModel
+
+from content.models import ContentFileBaseModel
 
 
-class VideoContentModel(MiddleContentPageModel):
+class VideoContentModel(ContentFileBaseModel):
     """
     Video Content Model
     """
@@ -39,7 +40,7 @@ class VideoContentModel(MiddleContentPageModel):
         verbose_name_plural = _("Video Contents")
 
 
-class AudioContentModel(MiddleContentPageModel):
+class AudioContentModel(ContentFileBaseModel):
     """
     Audio Content Model
     """

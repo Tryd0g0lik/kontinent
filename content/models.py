@@ -11,6 +11,8 @@ class PageModel(models.Model):
     'content' is the content of the page.
     """
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     url = models.URLField(verbose_name=_("URL"))
     title = models.CharField(
         max_length=255,
@@ -64,6 +66,9 @@ class ContentFileBaseModel(models.Model):
     order = models.PositiveIntegerField(
         default=0, help_text="Order", verbose_name=_("Order")
     )
+    page = models.ForeignKey(
+        PageModel, verbose_name=_("Page"), on_delete=models.CASCADE
+    )
     content_type = models.CharField(
         max_length=10,
         choices=CONTENT_TYPES_CHOICES,
@@ -78,21 +83,3 @@ class ContentFileBaseModel(models.Model):
 
     def __str__(self):
         return "%s" % self.title
-
-
-class MiddleContentPageModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    page = models.ForeignKey(
-        PageModel, verbose_name=_("Page"), on_delete=models.CASCADE
-    )
-    content = models.ForeignKey(
-        ContentFileBaseModel, verbose_name=_("Content"), on_delete=models.CASCADE
-    )
-
-    class Meta:
-        verbose_name = _("Intermediary Content")
-        verbose_name_plural = _("Intermediary Content")
-
-    def __str__(self):
-        return "%s update date: %s" % (self.content, self.updated_at)

@@ -8,7 +8,7 @@ from rest_framework.serializers import (
 )
 from adrf import fields
 
-from content.models import MiddleContentPageModel, PageModel
+from content.models import PageModel
 from content.models_content_files import VideoContentModel, AudioContentModel
 
 
