@@ -13,7 +13,15 @@ class PageModel(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    url = models.URLField(verbose_name=_("URL"))
+    url = models.URLField(
+        verbose_name=_("URL"),
+        validators=[
+            validators.RegexValidator(
+                regex=r"(^https?:\/\/[a-z0-9-\/_]+\.(ru|com|net)\/[a-z0-9-\/_]+\/$)",
+                message=_("Enter valid URL!"),
+            )
+        ],
+    )
     title = models.CharField(
         max_length=255,
         help_text=_("This is unique page's title"),
@@ -75,6 +83,12 @@ class ContentFileBaseModel(models.Model):
         default=CONTENT_TYPES_CHOICES[0][0],
         verbose_name=_("Content type"),
         help_text=_("Content type"),
+    )
+    is_active = models.BooleanField(
+        default=False,
+        choices=((True, _("Active")), (False, _("Inactive"))),
+        verbose_name=_("Is active"),
+        help_text=_("File is active or not"),
     )
 
     class Meta:

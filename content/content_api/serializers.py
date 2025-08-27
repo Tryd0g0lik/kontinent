@@ -15,14 +15,18 @@ from content.models_content_files import VideoContentModel, AudioContentModel
 class ContenBasetSerializer(serializers.ModelSerializer):
     content_type = CharField(read_only=True)
 
-    # class Meta:
-    #     fields = ["id", "title", "counter", "order", "content_type"]
+    class Meta:
+        fields = ["id", "title", "counter", "order", "content_type", "is_active"]
 
 
 class VideoContentSerializer(ContenBasetSerializer):
     class Meta:
         model = VideoContentModel
-        # fields = ContenBasetSerializer.Meta.fields + ["video_url", "subtitles_url"]
+        fields = ContenBasetSerializer.Meta.fields + [
+            "video_path",
+            "video_url",
+            "subtitles_url",
+        ]
 
 
 class AudioContentSerializer(ContenBasetSerializer):

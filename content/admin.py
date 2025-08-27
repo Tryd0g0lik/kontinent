@@ -5,7 +5,8 @@ from content.models_content_files import AudioContentModel, VideoContentModel
 
 
 class TitleStartsWithFilter(SimpleListFilter):
-    title = "Заголовок начинается с"
+    title = "Заголовок начинается с:"
+    # Below is the parameter from URL
     parameter_name = "title_start"
 
     def lookups(self, request, model_admin):
@@ -13,7 +14,28 @@ class TitleStartsWithFilter(SimpleListFilter):
             ("a", "A"),
             ("b", "B"),
             ("c", "C"),
-            # Добавьте другие буквы по необходимости
+            ("d", "D"),
+            ("e", "E"),
+            ("f", "F"),
+            ("g", "G"),
+            ("h", "H"),
+            ("i", "I"),
+            ("j", "J"),
+            ("k", "K"),
+            ("l", "L"),
+            ("m", "M"),
+            ("n", "N"),
+            ("o", "O"),
+            ("p", "P"),
+            ("q", "Q"),
+            ("r", "R"),
+            ("s", "S"),
+            ("t", "T"),
+            ("v", "V"),
+            ("w", "W"),
+            ("x", "X"),
+            ("y", "Y"),
+            ("z", "Z"),
         ]
 
     def queryset(self, request, queryset):
@@ -24,12 +46,12 @@ class TitleStartsWithFilter(SimpleListFilter):
 
 class ContentInline(admin.StackedInline):
     extra = 1
-    ordering = []  # 'order'
+    ordering = ["order"]
 
 
 class VideoContentInline(ContentInline):
     model = VideoContentModel
-    fields = ["title", "video_url", "subtitles_url", "order", "counter"]
+    fields = ["title", "video_url", "subtitles_url", "order", "counter", "is_active"]
 
 
 class AudioContentInline(ContentInline):
@@ -47,7 +69,7 @@ class PageAdmin(admin.ModelAdmin):
     ]
     search_fields = ["title"]
     inlines = [VideoContentInline, AudioContentInline]
-    # ordering = ['-created_at']
+    ordering = ["-created_at"]
 
 
 @admin.register(VideoContentModel)
