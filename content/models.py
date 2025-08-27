@@ -11,6 +11,7 @@ class PageModel(models.Model):
     'content' is the content of the page.
     """
 
+    url = models.URLField(verbose_name=_("URL"))
     title = models.CharField(
         max_length=255,
         help_text=_("This is unique page's title"),

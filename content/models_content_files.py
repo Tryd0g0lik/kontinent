@@ -44,6 +44,15 @@ class AudioContentModel(MiddleContentPageModel):
     Audio Content Model
     """
 
+    audio_url = models.URLField(
+        verbose_name=_("Audio URL"),
+        help_text=_("Pathname to the audio file"),
+        validators=[
+            validators.RegexValidator(
+                regex=r"(^[a-z][a-z0-9-\/_]+\/$)", message=_("Enter valid URL!")
+            )
+        ],
+    )
     text = models.TextField(
         verbose_name=_("Text"),
         help_text=_("This is the audio content"),
