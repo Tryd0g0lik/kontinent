@@ -1,7 +1,11 @@
 from typing import Union
 
 from adrf import serializers
-from rest_framework.serializers import CharField, HyperlinkedIdentityField
+from rest_framework.serializers import (
+    CharField,
+    HyperlinkedIdentityField,
+    SerializerMethodField,
+)
 from adrf import fields
 
 from content.models import MiddleContentPageModel, PageModel
@@ -46,6 +50,13 @@ class PageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageModel
         # fields = ["title", "url"]
+
+
+class PageDetailSerializer(serializers.ModelSerializer):
+    contents = SerializerMethodField()
+
+    class Meta:
+        model = PageModel
 
     def get_contents(self, obj: Union[VideoContentModel, AudioContentModel]):
         # Get all related objects of contents
