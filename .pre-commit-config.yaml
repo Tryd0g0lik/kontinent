@@ -26,12 +26,12 @@ repos:
         files: \.py$
         language_version: "3.12"
         exclude: ^(venv/|__init__.py|__pycache__py|manage.py|project/settings.py|__tests__/)$
-    repos:
-      # https://bandit.readthedocs.io/en/latest/config.html
-      # https://pypi.org/project/bandit/
-      - repo: https://github.com/PyCQA/bandit
-        rev: '' # Update me!
-        hooks:
-          - id: bandit
-            args: [ "-c", "pyproject.toml" ]
-            additional_dependencies: [ "bandit[toml]" ]
+
+  # https://bandit.readthedocs.io/en/latest/config.html
+  # https://pypi.org/project/bandit/
+  - repo: https://github.com/PyCQA/bandit
+    rev: '' # Update me!
+    hooks:
+        - id: bandit
+          args: [ "-c", "pyproject.toml" ]
+          additional_dependencies: [ "bandit[toml]" ]
