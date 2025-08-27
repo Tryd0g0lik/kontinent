@@ -1,0 +1,25 @@
+[flake8]
+extend-ignore = E111, E501, E303, F401, E203,E701, E721
+per-file-ignores =
+    __init__.py: F401
+length_line = 3
+max-line-length: 80
+filename = *.py
+exclude =
+    .git,
+    __pycache__/,
+    conf*,
+    old/,
+    build,
+    venv/,
+    env/,
+    tests/,
+    main.py,
+    menu_app/migrations,
+    archive/,
+    *.md,
+    */settings
+    dotenv_,
+    manage,
+    logs.py,
+    __tests__/

@@ -1,0 +1,37 @@
+repos:
+  # https://pre-commit.com/#config-exclude
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        files: \.py$
+        ignore: project
+      - id: end-of-file-fixer
+        files: \.py$
+        ignore: project, __tests__
+
+
+  - repo: https://github.com/PyCQA/flake8
+    # https://flake8.pycqa.org/en/latest/user/error-codes.html
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        exclude: project
+
+  - repo: https://github.com/psf/black
+    # https://black.readthedocs.io/en/stable/
+    rev: 24.8.0
+    hooks:
+      - id: black
+        files: \.py$
+        language_version: "3.12"
+        exclude: ^(venv/|__init__.py|__pycache__py|manage.py|project/settings.py|__tests__/)$
+    repos:
+      # https://bandit.readthedocs.io/en/latest/config.html
+      # https://pypi.org/project/bandit/
+      - repo: https://github.com/PyCQA/bandit
+        rev: '' # Update me!
+        hooks:
+          - id: bandit
+            args: [ "-c", "pyproject.toml" ]
+            additional_dependencies: [ "bandit[toml]" ]

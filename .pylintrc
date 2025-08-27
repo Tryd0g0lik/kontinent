@@ -1,0 +1,17 @@
+[MESSAGES CONTROL]
+disable=
+    R0903,
+    W0718,
+    R1705,
+    E0401,
+    E1206,
+    C0209,
+    C3002
+ignore-path=
+    project.settings.py,
+    dotenv_.py,
+    manage.py,
+    menu_app\\apps.py,
+    menu_app\\models.py,
+    menu_app\\migrations,
+# Максимальная глубина наследования
