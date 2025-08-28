@@ -3,6 +3,8 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+from project.settings import CONTENT_TYPES_CHOICES
+
 
 class PageModel(models.Model):
     """
@@ -53,10 +55,6 @@ class ContentFileBaseModel(models.Model):
     This is model for basic content of a page.
     """
 
-    CONTENT_TYPES_CHOICES = [
-        ("video", _("Video")),
-        ("audio", _("Audio")),
-    ]
     title = models.CharField(
         max_length=255,
         help_text=_("This is unique file's title"),

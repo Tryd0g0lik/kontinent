@@ -59,6 +59,7 @@ class AudioContentModel(ContentFileBaseModel):
         upload_to="%Y/%m/%d/audio/",
         help_text=_("Пример: 'your-file.mp3'"),
         blank=True,
+        null=True,
         validators=[
             validators.RegexValidator(
                 regex=r"(^[a-z][a-z0-9-\/_]+\/{0,1}[a-z0-9-\/_]?\.[a-z2-4]{2,4})",

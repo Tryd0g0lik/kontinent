@@ -1,0 +1,91 @@
+services:
+#    db:
+#        container_name: postgres_truckdriver
+#        image: postgres
+#        env_file: ./.env
+#        environment:
+#            - POSTGRES_USER=${POSTGRES_USER}
+#            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#            - POSTGRES_DB=${POSTGRES_DB}
+#        restart: unless-stopped
+#        healthcheck:
+#            test: ['CMD-SHELL', '-d ${POSTGRES_DB} -U ${POSTGRES_USER}']
+#            interval: 5s
+#            timeout: 5s
+#            retries: 5
+#        ports:
+#            - "5432:5432"
+#    backend:
+#        container_name: truck_driver
+#        build:
+#          dockerfile: ./Dockerfile
+#          context: .
+#        env_file: ./.env
+#        command:
+#            - bash
+#            - -c
+#            - |
+#                python3 ./manage.py makemigrations
+#                python3 ./manage.py migrate
+#                python3 ./manage.py collectstatic --clear --noinput
+#                daphne -b 0.0.0.0 -p 8000 project.asgi:application
+#
+#        volumes:
+#           - ./:/www/src
+#           - volume_static:/www/src/collectstatic
+#        depends_on:
+#          - db
+#          - redis
+#        ports:
+#          - "8000:8000"
+    redis:
+        container_name: redis_kontinent
+        image: redis:7.2-alpine
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+        #command:
+         #   - --bind 0.0.0.0
+        volumes:
+            - redis_data:/data
+        depends_on:
+            - db
+        ports:
+            - "6381:6379"
+        restart: unless-stopped
+#    celery:
+#        container_name: celery_truckdriver
+#        build:
+#            context: .
+#            dockerfile: ./Dockerfile  # Тот же Dockerfile, что и для backend
+#        env_file: ./.env
+#        command:
+#            - sh
+#            - -c
+#            - "celery -A project.celery worker --loglevel=info"
+#
+#        volumes:
+#            - .:/www/src
+#        depends_on:
+#            - db
+#            - redis
+#        restart: unless-stopped
+#
+#    nginx:
+#        container_name: nginx
+#        build:
+#            context: ./nginx
+#            dockerfile: Dockerfile
+#        depends_on:
+#            - backend
+#        volumes:
+#            - volume_static:/www/src/collectstatic
+#        restart: on-failure
+#        ports:
+#            - "80:80"
+#volumes:
+#    redis_data:
+#    volume_static:

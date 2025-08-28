@@ -31,10 +31,40 @@
 но согласно ТЗ счётчик должен увеличиваться.
     1) Контролировать просмотры той или иной страницы уже нет возможности т.Как данные полностью выгружены на сторону клиента/браузера.
     2) Поэтому требуется отдельный API для счетчиков и отдельный запрос от клиента при обращении на страницу ИЛИ для API списка всех страниц увеличиваем все счётчики (но, без гарантии, что страница будет просмотрена)
+    3) Получается тут не идет речь об увеличении числа просмотров - видео контента. Счётчик срабатывает при использовании API.  
   
 >> При обращении к API с деталями о странице
 
-Согласно пп. №1, 2, 3, обращаясь к любому из API (п.1 и п.2) мы затрагиваем п.3.  
+Согласно пп. №: 1, 2, 3, обращаясь к любому из API (п.1 и п.2) мы затрагиваем п.3.  
 
 ### Note:
-Желание клиента закон и каждый видит мир по своему. Поэтому  для API списка всех страниц увеличиваем все счётчики (гарантии просмотра).
+Желание клиента закон. События из пунктов №: 1,2 увеличивают размер счетчиков для контента c nbgjv video & audio (без гарантии просмотра).
+
+## CACHING
+```python
+import json
+import asyncio 
+def set_cache(caching_key: str, response) -> None:
+    """
+    This is sync function.
+    Data is cache to the JSON's format.
+    :param str caching_key: Template is '<page_data_<pk_from_url>_< pathname_from_apiurl >>'
+    Exemple of 'caching_key' is the: 'page_data_2_/api/page/content/2/'.
+    :param response:
+    :return:
+    """
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(
+        asyncio.to_thread(
+            cache.set,
+            timeout=(60 * 60 * 24),
+            key=caching_key,
+            value=json.dumps({"data": response.data}),
+        )
+    )
+```
+
+## Celery
+![celery](./img/celery.png)

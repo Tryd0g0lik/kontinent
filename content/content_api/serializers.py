@@ -1,5 +1,4 @@
 from typing import Union
-from urllib.request import Request
 
 from adrf import serializers
 from rest_framework.serializers import (
@@ -7,7 +6,6 @@ from rest_framework.serializers import (
     HyperlinkedIdentityField,
     SerializerMethodField,
 )
-from adrf import fields
 
 from content.models import PageModel
 from content.models_content_files import VideoContentModel, AudioContentModel
@@ -33,7 +31,7 @@ class VideoContentSerializer(ContenBasetSerializer):
 class AudioContentSerializer(ContenBasetSerializer):
     class Meta:
         model = AudioContentModel
-        # fields = ContenBasetSerializer.Meta.fields + ["audio_url"]
+        fields = ContenBasetSerializer.Meta.fields + ["audio_url", "audio_path"]
 
 
 class ContentPolymorphicSerializer(serializers.ModelSerializer):
@@ -54,7 +52,7 @@ class PageListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PageModel
-        # fields = ["title", "url"]
+        fields = ["title", "url"] + AudioContentSerializer.Meta.fields
 
 
 class PageDetailSerializer(serializers.ModelSerializer):
