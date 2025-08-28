@@ -1,4 +1,5 @@
 from typing import Union
+from urllib.request import Request
 
 from adrf import serializers
 from rest_framework.serializers import (
@@ -61,6 +62,7 @@ class PageDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PageModel
+        fields = "__all__"
 
     def get_contents(self, obj: Union[VideoContentModel, AudioContentModel]):
         # Get all related objects of contents
@@ -74,3 +76,6 @@ class PageDetailSerializer(serializers.ModelSerializer):
             all_contents,
             many=True,
         ).data
+
+
+type TypePageDetailSerializer = type(PageDetailSerializer)
