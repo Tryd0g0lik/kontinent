@@ -10,24 +10,52 @@ import asyncio
 import json
 import logging
 import threading
-from http.client import responses
-from typing import List
+from typing import List, TypedDict, NotRequired
 
 from cfgv import ValidationError
-from channels.utils import await_many_dispatch
 from django.http import HttpRequest
-from django.utils.decorators import method_decorator
 from django.core.cache import cache
 from rest_framework import status, serializers
 from rest_framework.response import Response
 from adrf.viewsets import ReadOnlyModelViewSet as AsyncReadOnlyModelViewSet
 from content.content_api.serializers import PageDetailSerializer
 from content.models import PageModel
-
+from content.tasks import increment_content_counter
 from logs import configure_logging
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
+
+
+class InitialContent(TypedDict):
+    id: int | str
+    title: str
+    counter: int | str
+    order: int | str
+    content_type: str
+    is_active: bool
+    video_path: NotRequired[str]
+    video_url: NotRequired[str]
+    subtitles_url: NotRequired[str]
+    audio_path: NotRequired[str]
+    audio_url: NotRequired[str]
+
+
+class InitialPage(TypedDict):
+    id: int | str
+    contents: List[InitialContent]
+    created_at: str
+    updated_at: str
+    url: str
+    title: str
+    text: str
+
+
+class Initial(TypedDict):
+    count: int
+    next: NotRequired[int]
+    previous: any
+    results: List[InitialPage]
 
 
 class PageDetailView(AsyncReadOnlyModelViewSet):
@@ -35,6 +63,42 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
     serializer_class = PageDetailSerializer
 
     async def list(self, request: HttpRequest, *args, **kwargs) -> Response:
+        """
+        Method: Get.
+        :param HttpRequest request:
+        :param args: is empty.
+        :param kwargs: is empty
+        :return: ```json
+                {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 2,
+                    "contents": [
+                        {
+                            "id": 2,
+                            "title": "New page",
+                            "counter": 0,
+                            "order": 2,
+                            "content_type": "video",
+                            "is_active": false,
+                            "video_path": "/media/2025/08/27/video/%D0%AD%D1%82%D0%B8_%D1%81%D1%82%D1%80%D0%B0%D1%88%D0%BD%D1%8B%D0%B5_%D0%B1%D1%83%D0%BA%D0%B2%D1%8B_MV.mp4",
+                            "video_url": null,
+                            "subtitles_url": null
+                        }
+                    ],
+                    "created_at": "2025-08-27T16:39:30.072225+07:00",
+                    "updated_at": "2025-08-27T16:39:30.073226+07:00",
+                    "url": "http://dasdas.ru/freelance_django/",
+                    "title": "New Video Content",
+                    "text": "This is page's text. Basis content."
+                }
+            ]
+        }
+        ```
+        """
         response = Response(status=status.HTTP_404_NOT_FOUND)
         try:
             caching_key = f"page_data_{request.get_full_path()}"
@@ -48,6 +112,39 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
 
             list = super().list
             result = await asyncio.to_thread(list, request, **kwargs)
+
+            # Get lines db's indices
+            async def task_get_list_of_indices(response: Response) -> None:
+                """
+                Getting indices from page's contents (audio, video) and run the counter
+                :param response:
+                :return:
+                """
+                data: Initial = await asyncio.to_thread(lambda: response.data)
+                if not data.__getitem__("results"):
+                    return []
+                data_list: List[InitialPage] = data.__getitem__("results")
+
+                data_pages_list: List[InitialPage] = [
+                    views.__getitem__("contents") for views in data_list
+                ][0]
+                data_numbers_list: List[dict] = [
+                    {
+                        "content_type": view.__getitem__("content_type"),
+                        "id": view.__getitem__("id"),
+                    }
+                    for view in data_pages_list
+                ]
+                # # RUN THE TASK - Update content's counter
+                increment_content_counter.delay((data_numbers_list,))
+                return
+
+            def task_increase_counter(response: Response):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(task_get_list_of_indices(response))
+
+            threading.Thread(target=task_increase_counter, args=(result,)).start()
             # The CACHE SET. Here trying set the data to the cache
             threading.Thread(target=self.set_cache, args=(caching_key, result)).start()
             return result
@@ -59,7 +156,7 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
                     error.args[0],
                 )
             )
-            response.data = f"%s: Error => %s" % (
+            response.data = "%s: Error => %s" % (
                 PageDetailView.__class__.__name__ + "." + self.list.__name__,
                 error.args[0],
             )
@@ -67,11 +164,12 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
 
     async def retrieve(self, request, *args, **kwargs) -> Response:
         """
+        Method: Get.
         This method get a single content by properties of 'kwargs.pk'.
         :param HttpRequest request:
         :param args: this parameter is empty
         :param dict kwargs: '{"pk": int}' Index from db's line.
-        :return:
+        :return: HttpResponse
         """
         message = (
             "%s:" % PageDetailView.__class__.__name__ + "." + self.retrieve.__name__
