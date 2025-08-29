@@ -40,6 +40,138 @@
 ### Note:
 Желание клиента закон. События из пунктов №: 1,2 увеличивают размер счетчиков для контента c nbgjv video & audio (без гарантии просмотра).
 
+
+## APP использует
+
+
+|                      |                               |                           |
+|:---------------------|:------------------------------|:--------------------------|
+| async "`Django`"     | async "`DRF`"                 | |
+| "`Celery`"           | "`Radis`"                     | "`PostgreSQL` or "`ASQLite`" |
+| "`daphne`"           | "`Signal`"                    | "`pytest`"                |
+| [swagger](./swagger) | [nginx](./nginx/default.conf) |[docker-compose](./docker-compose.yml)   |
+| "`asincio`"              | "`threading`"                     | |
+
+---
+### Tree
+```text
+mateImageAI/
+├── backend/
+│   ├── .github
+│   |   └──workflows/*
+│   ├── .gitignore
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── __tsts__/
+│   |   └──tests_content/*
+│   ├── collectstatic/
+│   |   └──drf-yasg/*
+│   |   └──admin/*
+│   |   └──rest_framework/*
+│   |   └──scripts/*
+│   |   └──styles/*
+│   ├── img/
+│   ├── content/
+│   |   └──content_api/*.py
+│   |   └──migrations/*
+│   |   └── *.py
+│   ├── project/
+│   |   └── *.py
+│   └── static/
+│   └── templates/
+│   |   └── layout/
+│   |   |   └── *.html
+│   |   └── index.html
+│   └── .browserslistrc
+│   └── .dockerignore
+│   └── .editorconfig
+│   └── .flake8
+│   └── docker-compose.ynl
+│   └── .pre-commit-config.yaml
+│   └── .pylintrc
+│   └── dotenv_.py
+│   └── logs.py
+│   └── pyproject.toml
+│   └── pytest.ini
+│   └── swagger_for_postman.yml
+│   └── truckdriver_db.sqlite3
+
+
+``` 
+---
+### Commands
+
+```
+py manage.py collectstatic
+py manage.py makemigrations
+py manage.py migrate
+py manage.py runserver
+git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s' # история развития проекта
+```
+#### Note:
+"`py manage.py collectstatic --clear --noinput`" If was changed the static files, it means before the start of works, run the command for an assembly a static's file.
+*"`--clear`"* - removed the old static's files. *"`--noinput`"* - for you are not needed write a comment. \
+
+- "`makemigrations`" if you need update collection migrations after changing the model of db;
+- "`migrate`" - creating/apply (or updating the structures) db by new migration's files for db;
+- "`runserver`" - Project (it has dependence the redis, channels, celery, option django async and) is based on the "`daphne`" server.   
+
+### Settings.py
+File "`project/settings.py`" have a basis option plus:
+- "`ASGI_APPLICATION`" django cms was switching to the async mode; 
+- "`celery`";
+- "`PASSWORD_HASHERS`";  
+- "`Logging`" Tah is conf for logs. From root of project we can see the file "`logs.py`". It contains the template for loging; 
+- "`swagger`".
+- "`CONTENT_TYPES_CHOICES`"
+
+### OpenAPI
+- '`GET`' "`{{url_basis}}/api/page/content/`" - Список страниц 
+- '`GET`' "`{{url_basis}}/api/page/content/2/`" - Одна страница на основе API погинации. 
+---
+## Local URL
+* "`admin/`";
+* "`swagger/`";
+* "`redoc/`";
+* "`swagger<format>/`".
+----
+### Типизацию
+
+```python
+# For an example
+from typing import (List, TypedDict, NotRequired)
+from content.content_api.views_api import InitialPage
+class InitialContent(TypedDict):
+    id: int | str
+    title: str
+    counter: int | str
+    order: int | str
+    content_type: str
+    is_active: bool
+    video_path: NotRequired[str]
+    video_url: NotRequired[str]
+    subtitles_url: NotRequired[str]
+    audio_path: NotRequired[str]
+    audio_url: NotRequired[str]
+
+# and
+def handler_of_task(data_list: list) -> List[dict]:
+    data_pages_list: List[InitialPage] = []
+
+# and more ...
+```
+---
+### asyncio & threading
+|||||
+|:----|:----|:----|:----|
+|"`asyncio.new_event_loop`"|"`asyncio.set_event_loop` "|"`loop.run_until_complete`"|"`asyncio.to_thread`"|
+|"`threading.Thread`"||||
+
+Основной поток не замечает такие трудоёмкие процессы как:
+ - создание & обновление кеша;
+ - обновление счетчика в кеше и модели. Трудоёмкие процессы проходят фоном.
+
+
 ## CACHING
 ```python
 import json
@@ -67,4 +199,43 @@ def set_cache(caching_key: str, response) -> None:
 ```
 
 ## Celery
+"`project/celery.py`"\
 ![celery](./img/celery.png)
+
+---
+### Счётчики
+
+>> Следует учитывать, что в будущем виды контента могут добавляться и функционал
+>> должен легко расширятся.
+
+Путь к фоновой задачи, для обработки счетчиков из модели - "`content/tasks.py`". 
+
+```python
+from typing import List
+from content.models_content_files import VideoContentModel, AudioContentModel
+def increment_content_counter(data_numbers_list: List[dict]) -> None:
+    """
+    The whole difficulty is that we get both pagination-based page lists and a single page - from the database and
+     from the cache. Therefore, the structure is slightly different
+    :param data_numbers_list:
+    :return:
+    """
+    contents_views: list = [VideoContentModel.objects, AudioContentModel.objects]
+    list_of_content_names: List[str] = ["audio", "video"]
+```
+
+Переменные "`contents_views`" и "`list_of_content_names`" без труда примут дополнения в случае расширения вида контента.
+- "`contents_views`" - новые объекты моделей
+- "`list_of_content_names`" имена контента.
+
+#### Note:
+В случае рассширения типа/видов контента, необходимо:
+- имя нового контента добавить в настроки приложения "`project/settings.py::CONTENT_TYPES_CHOICES`";
+- создать модель и на входе наследуясь от "`content.models.ContentFileBaseModel`".
+
+## Админ-панель
+![admin](./img/admin.png)
+
+## Media
+![media](./img/media_tree.png)
+

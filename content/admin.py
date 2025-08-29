@@ -1,3 +1,7 @@
+"""
+content/admin.py
+"""
+
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from content.models import PageModel

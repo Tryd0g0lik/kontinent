@@ -10,14 +10,16 @@ import asyncio
 import json
 import logging
 import threading
-from typing import List, TypedDict, NotRequired
+from typing import List
 
 from cfgv import ValidationError
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
 from django.core.cache import cache
 from rest_framework import status, serializers
 from rest_framework.response import Response
 from adrf.viewsets import ReadOnlyModelViewSet as AsyncReadOnlyModelViewSet
+
+from content.content_api.additionally import Initial, handler_of_task, InitialPage
 from content.content_api.serializers import PageDetailSerializer
 from content.models import PageModel
 from content.tasks import increment_content_counter
@@ -25,66 +27,6 @@ from logs import configure_logging
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
-
-
-class InitialContent(TypedDict):
-    id: int | str
-    title: str
-    counter: int | str
-    order: int | str
-    content_type: str
-    is_active: bool
-    video_path: NotRequired[str]
-    video_url: NotRequired[str]
-    subtitles_url: NotRequired[str]
-    audio_path: NotRequired[str]
-    audio_url: NotRequired[str]
-
-
-class InitialPage(TypedDict):
-    id: int | str
-    contents: List[InitialContent]
-    created_at: str
-    updated_at: str
-    url: str
-    title: str
-    text: str
-
-
-class Initial(TypedDict):
-    count: int
-    next: NotRequired[int]
-    previous: any
-    results: List[InitialPage]
-
-
-def handler_of_task(data_list: list) -> List[dict]:
-    data_pages_list: List[InitialPage] = [
-        (
-            views.__getitem__("data").__getitem__("contents")
-            if "data" in views.keys()
-            else views.__getitem__("contents")
-        )
-        for views in data_list
-    ]
-    data_numbers_list: List[dict] = [
-        (
-            {
-                "content_type": view[0].__getitem__("content_type"),
-                "id": view[0].__getitem__("id"),
-            }
-            if not isinstance(view, list)
-            else [
-                {
-                    "content_type": v.__getitem__("content_type"),
-                    "id": v.__getitem__("id"),
-                }
-                for v in view
-            ]
-        )
-        for view in data_pages_list
-    ]
-    return data_numbers_list
 
 
 class PageDetailView(AsyncReadOnlyModelViewSet):
@@ -295,10 +237,10 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
             )
         )
 
-    # Get lines db's indices
     @staticmethod
     async def _task_get_list_of_indices(response: Response) -> None:
         """
+        Get lines db's indices
         Getting indices from page's contents (audio, video) and start the celery's task
         :param response:
         :return:

@@ -1,5 +1,8 @@
-from typing import Union
+"""
+content/content_api/serializers.py
+"""
 
+from typing import Union
 from adrf import serializers
 from rest_framework.serializers import (
     CharField,
