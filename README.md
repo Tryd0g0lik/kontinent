@@ -1,16 +1,26 @@
 ## Вопрос & Ответ
+*Что было сделано.*
+
 >> *пецифичные атрибуты: ссылка на видеофайл, ссылка на файл субтитров*
 - локальная ссылка формируется при сохранении файла? *Пример: Когда user, через форму, выбирает файл из локального диска и сохраняет на сервере*. 
 - внешная ссылка которую user добавляет к страницу?
 
-### Note: 
-Не зная ответ, на эти вопросы, создал три не обязательных поля  для видео файлов, и два не обязательных поля для аудио.
+### Note:
+**В данном разделе представлено часть вопросов**.\
+Некоторые строки из ТЗ представляют образную формулировку задач. И каждая из этих строк рождаем пакет вопросов. \
+**Каждый вопрос это**: 
+- разная логика кода;
+- каждая логика это конечный пользователь получает разное исполнение. 
+
+**Что конкретно закладывали в формулировку текущих задач, осталось ведомо только автору ТЗ**.\
+Не зная истинный ответ на вопросы, создал три необязательных поля  для видео файлов и два не обязательных поля для аудио.\
+Их уже заложил в приложение и в будущем возможности сервиса возможно расширять. 
 
 ----
 >> *Контент типа аудио (Audio)*\
 >> *специфичные атрибуты: поле для хранения текста произвольной длинны*
 
-Что подразумевалось под *хранения текста произвольной длинны*:
+Что подразумевалось под "*хранения текста произвольной длинны*":
  - дополнительное текстовое описание к файлу, само аудио в виде файла на диске хранится?
  - пользователь выбирает файл на локальном диске (у себя), отправляет на сервер. Сам файл отправлятся в виде binary кода. Вот этот код и сохраняем на сервере в виде строки?
  - внешняя текстовая ссылка к месту нахождения файла?
@@ -38,7 +48,7 @@
 Согласно пп. №: 1, 2, 3, обращаясь к любому из API (п.1 и п.2) мы затрагиваем п.3.  
 
 ### Note:
-Желание клиента закон. События из пунктов №: 1,2 увеличивают размер счетчиков для контента c nbgjv video & audio (без гарантии просмотра).
+Желание клиента закон. События из пунктов №: 1,2 увеличивают размер счетчиков для контента c типом video & audio (*без гарантии просмотра*).
 
 
 ## APP использует
@@ -112,7 +122,7 @@ git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --p
 "`py manage.py collectstatic --clear --noinput`" If was changed the static files, it means before the start of works, run the command for an assembly a static's file.
 *"`--clear`"* - removed the old static's files. *"`--noinput`"* - for you are not needed write a comment. \
 
-- "`makemigrations`" if you need update collection migrations after changing the model of db;
+- "`makemigrations`" if you need update collection ща migrations after changing the model of db;
 - "`migrate`" - creating/apply (or updating the structures) db by new migration's files for db;
 - "`runserver`" - Project (it has dependence the redis, channels, celery, option django async and) is based on the "`daphne`" server.   
 
@@ -162,10 +172,10 @@ def handler_of_task(data_list: list) -> List[dict]:
 ```
 ---
 ### asyncio & threading
-|||||
-|:----|:----|:----|:----|
-|"`asyncio.new_event_loop`"|"`asyncio.set_event_loop` "|"`loop.run_until_complete`"|"`asyncio.to_thread`"|
-|"`threading.Thread`"||||
+||                          |||
+|:----|:-------------------------|:----|:----|
+|"`asyncio.new_event_loop`"| "`asyncio.set_event_loop`"|"`loop.run_until_complete`"|"`asyncio.to_thread`"|
+|"`threading.Thread`"|                          |||
 
 Основной поток не замечает такие трудоёмкие процессы как:
  - создание & обновление кеша;
@@ -174,6 +184,7 @@ def handler_of_task(data_list: list) -> List[dict]:
 
 ## CACHING
 ```python
+# content/content_api/views_api.py
 import json
 import asyncio 
 def set_cache(caching_key: str, response) -> None:
