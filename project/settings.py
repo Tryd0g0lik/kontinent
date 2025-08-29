@@ -151,8 +151,9 @@ STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Настройки для файлового хранилища
+# 'MEDIA_PATH_TEMPLATE' - this variable is my own.
+MEDIA_PATH_TEMPLATE = "%Y/%m/%d/audio/"
+# Options for file's repository/source
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Default primary key field type
@@ -250,3 +251,5 @@ CONTENT_TYPES_CHOICES = [
         ("video", _("Video")),
         ("audio", _("Audio")),
     ]
+# Separating of file by chunk and after read the file and yield chunks of ``chunk_size`` bytes
+DEFAULT_CHUNK_SIZE = 8192

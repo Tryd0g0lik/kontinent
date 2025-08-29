@@ -7,6 +7,7 @@ from django.core import validators
 from django.utils.translation import gettext_lazy as _
 
 from content.models import ContentFileBaseModel
+from project.settings import MEDIA_PATH_TEMPLATE
 
 
 class VideoContentModel(ContentFileBaseModel):
@@ -60,7 +61,7 @@ class AudioContentModel(ContentFileBaseModel):
     """
 
     audio_path = models.FileField(
-        upload_to="%Y/%m/%d/audio/",
+        upload_to=MEDIA_PATH_TEMPLATE,
         help_text=_("Пример: 'your-file.mp3'"),
         blank=True,
         null=True,
