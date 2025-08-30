@@ -1,25 +1,18 @@
 """
 content/tasks.py
 """
-
-import logging
 import os
+import logging
 from typing import List
 
 from django.core.files.storage import default_storage
 from django.db import transaction, connections
 from django.db.models import F
 from celery import shared_task
-from dulwich.porcelain import remove
-
 from content.views import fduplicate
-
-
 from content.models_content_files import VideoContentModel, AudioContentModel
 from logs import configure_logging
-
 from project.settings import MEDIA_URL
-
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
@@ -112,7 +105,8 @@ def task_process_video_upload(video_id, file_data, file_name):
         video.upload_status = "processing"
         video.asave()
         # create file and timelive
-        main_path = f"{video.video_path.name}" if MEDIA_URL.lstrip("/")  in video.video_path.name else "media/" + video.video_path.name
+        main_path = f"{video.video_path.name}" if MEDIA_URL.lstrip("/") in video.video_path.name\
+            else "media/" + video.video_path.name
         temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
         with open(temp_path, "wb") as f:
             f.write(file_data)
@@ -145,7 +139,6 @@ def task_process_video_upload(video_id, file_data, file_name):
             log.info(f"Using existing file: {duplicate_path}")
         else:
             # create the basis file.
-
             with open(temp_path, "rb") as source:
                 with open(main_path, "wb") as destination:
                     destination.write(source.read())
@@ -175,7 +168,7 @@ def task_process_audio_upload(audio_id, file_data, file_name):
         audio = AudioContentModel.objects.get(id=audio_id)
         audio.upload_status = "processing"
         audio.asave()
-        # create file and timelive
+        # create temporary file (in 'media/<file>')
         main_path = f"{MEDIA_URL.lstrip("/")}{audio.audio_path.name}"
         temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
         with open(temp_path, "wb") as f:
@@ -191,12 +184,11 @@ def task_process_audio_upload(audio_id, file_data, file_name):
             audio.audio_path = duplicate_path
             audio.upload_status = "completed"
             audio.asave()
-            # Удаляем временный файл
-            os, remove(temp_path)
+            # Removing temporary file
+            os.remove(temp_path)
             log.info(f"Using existing audio file: {duplicate_path}")
         else:
-            # Сохраняем файл в постоянное место
-
+            # Create the basis file
             with open(temp_path, "rb") as source:
                 with open(main_path, "wb") as destination:
                     destination.write(source.read())
@@ -205,23 +197,13 @@ def task_process_audio_upload(audio_id, file_data, file_name):
             audio.upload_status = "completed"
             audio.asave()
 
-            # Добавляем файл в кэш валидатора
+            # Adding the server's path of file to the cash of the file's validator
             fduplicate.add_file_hash(main_path, fduplicate.calculate_md5(main_path))
 
-            # Удаляем временный файл
+            # REmoving the temporary file (from 'media/<file>')
             default_storage.delete(temp_path)
             log.info(f"Audio file uploaded successfully: {main_path}")
 
     except Exception as e:
         log.error(f"Error processing audio upload: {str(e)}")
         raise
-
-
-# @shared_task
-# def task_cleaning_media_root(path: str):
-#     """
-#     This task has the timeout.
-#     :param path:
-#     :return:
-#     """
-#     os.remove(path) if os.path.exists(path) else None
