@@ -11,8 +11,8 @@ from django.core.files.uploadedfile import UploadedFile
 from django.core.files.storage import default_storage
 from project import settings
 from logs import configure_logging
-from content.models_content_files import VideoContentModel, AudioContentModel
-from project.settings import DEFAULT_CHUNK_SIZE, FIELD_NAME_LIST
+from content.models_content_files import (VideoContentModel, AudioContentModel)
+from project.settings import DEFAULT_CHUNK_SIZE, FIELD_NAME_LIST, MEDIA_URL
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -51,7 +51,7 @@ class FileDuplicateChecker:
         for path in path_list:
             if hasattr(file_obj, path):
                 # For FileField objects
-                with open("media/" + file_obj.video_path.name, "rb") as file:
+                with open(MEDIA_URL.lstrip("/") + file_obj.video_path.name, "rb") as file:
                     for chunk in iter(lambda: file.read(chunk_size), b""):
                         md5_hash.update(chunk)
                 path_list.clear()
@@ -61,9 +61,6 @@ class FileDuplicateChecker:
                     for chunk in iter(lambda: file.read(chunk_size), b""):
                         md5_hash.update(chunk)
                 path_list.clear()
-                # else:
-                #     # For other cases (URLs, etc.)
-                #     return None
         return md5_hash.hexdigest()
 
     def check_duplicate(

@@ -2,6 +2,8 @@
 
 from django.db import migrations, models
 
+from project.settings import MEDIA_URL
+
 
 class Migration(migrations.Migration):
 
@@ -14,7 +16,7 @@ class Migration(migrations.Migration):
             model_name="videocontentmodel",
             name="video_path",
             field=models.FileField(
-                blank=True, null=True, upload_to="medis/%Y/%m/%d/videos/"
+                blank=True, null=True, upload_to= MEDIA_URL.lstrip("/") + "%Y/%m/%d/videos/"
             ),
         ),
     ]

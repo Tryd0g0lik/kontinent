@@ -19,7 +19,7 @@ from content.file_validator import FileDuplicateChecker
 from content.models_content_files import VideoContentModel, AudioContentModel
 from logs import configure_logging
 from project import settings
-from project.settings import MEDIA_PATH_TEMPLATE_AUDIO
+from project.settings import MEDIA_PATH_TEMPLATE_AUDIO, MEDIA_URL
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -104,7 +104,7 @@ def increment_content_counter(data_numbers_list: List[dict]) -> None:
 @shared_task
 def task_process_video_upload(video_id, file_data, file_name):
     """
-    Фоновая задача для обработки загрузки видео файла
+    Background task for loading the video file
     """
 
     message = "%s: " % task_process_video_upload.__name__
@@ -112,19 +112,19 @@ def task_process_video_upload(video_id, file_data, file_name):
         video = VideoContentModel.objects.get(id=video_id)
         video.upload_status = "processing"
         video.asave()
-        # Сохраняем файл во временное место
-        main_path = f"{video.video_path.name}" if "media/" in video.video_path.name else "media/" + video.video_path.name
-        temp_path = f'media/{file_name.split("/video/")[-1]}'
+        # create file and timelive
+        main_path = f"{video.video_path.name}" if MEDIA_URL.lstrip("/")  in video.video_path.name else "media/" + video.video_path.name
+        temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
         with open(temp_path, "wb") as f:
             f.write(file_data)
 
-        # Проверяем дубликаты
+        # check the duplacation
         duplicate_path = fduplicate.check_duplicate(
             video, model_class=VideoContentModel, field_name_list=["video_path"]
         )
 
         if duplicate_path:
-            # Если файл уже существует, используем существующий
+            # If file exists we use the old file
             with transaction.atomic():
                 # Connection to the db
                 with connections["default"].cursor() as cursor:
@@ -141,28 +141,24 @@ def task_process_video_upload(video_id, file_data, file_name):
                         log.info(message + f"ERROR => {error.args[0]}")
                     finally:
                         cursor.close()
-
-            # video.video_path = duplicate_path
-            # video.upload_status = "completed"
-            # video.asave()
-            # # Удаляем временный файл
+            # remove the temporary file
             os.remove(temp_path)  if os.path.exists(temp_path) else None
             log.info(f"Using existing file: {duplicate_path}")
         else:
-            # Сохраняем файл в постоянное место
+            # create the basis file.
 
             with open(temp_path, "rb") as source:
                 with open(main_path, "wb") as destination:
                     destination.write(source.read())
 
-            video.video_path = main_path.split("media/")[-1]
+            video.video_path = main_path.split(MEDIA_URL.lstrip("/"))[-1]
             video.upload_status = "completed"
             video.asave()
 
-            # Добавляем файл в кэш валидатора
+            # new file add to the cache of file's validation
             fduplicate.add_file_hash(main_path, fduplicate.calculate_md5(main_path))
 
-            # Удаляем временный файл
+            # remove the temporary file
             os.remove(temp_path) if os.path.exists(temp_path) else None
             log.info(f"File uploaded successfully: {main_path}")
 
@@ -174,25 +170,25 @@ def task_process_video_upload(video_id, file_data, file_name):
 @shared_task
 def task_process_audio_upload(audio_id, file_data, file_name):
     """
-    Фоновая задача для обработки загрузки аудио файла
+    Background task for loading the audio file
     """
     try:
         audio = AudioContentModel.objects.get(id=audio_id)
         audio.upload_status = "processing"
         audio.asave()
-        # Сохраняем файл во временное место
-        main_path = f"media/{audio.audio_path.name}"
-        temp_path = f'media/{file_name.split("/video/")[-1]}'
+        # create file and timelive
+        main_path = f"{MEDIA_URL.lstrip("/")}{audio.audio_path.name}"
+        temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
         with open(temp_path, "wb") as f:
             f.write(file_data)
 
-        # Проверяем дубликаты
+        # check the duplacation
         duplicate_path = fduplicate.check_duplicate(
             audio, model_class=AudioContentModel, field_name_list=["audio_path"]
         )
 
         if duplicate_path:
-            # Если файл уже существует, используем существующий
+            # If file exists we use the old file
             audio.audio_path = duplicate_path
             audio.upload_status = "completed"
             audio.asave()
@@ -206,7 +202,7 @@ def task_process_audio_upload(audio_id, file_data, file_name):
                 with open(main_path, "wb") as destination:
                     destination.write(source.read())
 
-            audio.video_path = main_path.split("media/")[-1]
+            audio.video_path = main_path.split(MEDIA_URL.lstrip("/"))[-1]
             audio.upload_status = "completed"
             audio.asave()
 
@@ -224,4 +220,9 @@ def task_process_audio_upload(audio_id, file_data, file_name):
 
 @shared_task
 def task_cleaning_media_root(path: str):
+    """
+    This task has the timeout.
+    :param path:
+    :return:
+    """
     os.remove(path) if os.path.exists(path) else None
