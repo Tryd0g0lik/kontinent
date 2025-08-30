@@ -62,8 +62,8 @@ class FileDuplicateChecker:
                 # For file paths
                 with open((file_obj if MEDIA_URL.lstrip("/") in file_obj\
                     else MEDIA_URL.lstrip("/") + file_obj), "rb") as file:
-                    for chunk in iter(lambda: file.read(chunk_size), b""):
-                        md5_hash.update(chunk)
+                    # for chunk in iter(lambda: file.read(size=chunk_size), b""):
+                    md5_hash.update(file.read())
                 path_list.clear()
         return md5_hash.hexdigest()
 
@@ -95,7 +95,6 @@ class FileDuplicateChecker:
             # Check the cache.
             if file_md5 in self.hash_map.keys():
                 existing_path = self.hash_map[file_md5]
-                # if self.storage.exists(existing_path):
                 return existing_path
             # Check into the db.
             for field_name in field_name_list:
