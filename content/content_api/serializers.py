@@ -4,14 +4,18 @@ content/content_api/serializers.py
 
 from typing import Union
 from adrf import serializers
+
+from content.file_validator import FileDuplicateChecker
+from content.models import PageModel
+from content.models_content_files import VideoContentModel, AudioContentModel
 from rest_framework.serializers import (
     CharField,
     HyperlinkedIdentityField,
     SerializerMethodField,
 )
 
-from content.models import PageModel
-from content.models_content_files import VideoContentModel, AudioContentModel
+
+fduplicate = FileDuplicateChecker()
 
 
 class ContenBasetSerializer(serializers.ModelSerializer):

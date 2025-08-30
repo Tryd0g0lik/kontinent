@@ -152,7 +152,9 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # 'MEDIA_PATH_TEMPLATE' - this variable is my own.
-MEDIA_PATH_TEMPLATE = "%Y/%m/%d/audio/"
+MEDIA_PATH_TEMPLATE_AUDIO = "%Y/%m/%d/audio/"
+MEDIA_PATH_TEMPLATE_VIDEO = "%Y/%m/%d/video/"
+FIELD_NAME_LIST = ["audio_path","video_path", "audio_url", "video_url", ]
 # Options for file's repository/source
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
@@ -253,3 +255,6 @@ CONTENT_TYPES_CHOICES = [
     ]
 # Separating of file by chunk and after read the file and yield chunks of ``chunk_size`` bytes
 DEFAULT_CHUNK_SIZE = 8192
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB

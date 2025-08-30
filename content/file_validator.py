@@ -12,8 +12,7 @@ from django.core.files.storage import default_storage
 from project import settings
 from logs import configure_logging
 from content.models_content_files import VideoContentModel, AudioContentModel
-from project.settings import DEFAULT_CHUNK_SIZE, MEDIA_PATH_TEMPLATE
-
+from project.settings import DEFAULT_CHUNK_SIZE, FIELD_NAME_LIST
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -48,11 +47,23 @@ class FileDuplicateChecker:
                 md5_hash.update(chunk)
             # Return the size to the beginning
             file_obj.seek(0)
-        else:
-            # For a classic files
-            with open(f"{MEDIA_PATH_TEMPLATE}/{file_obj}", "rb") as file:
-                for chunk in iter(lambda: file.read(DEFAULT_CHUNK_SIZE), b""):
-                    md5_hash.update(chunk)
+        path_list = FIELD_NAME_LIST[:3].copy()
+        for path in path_list:
+            if hasattr(file_obj, path):
+                # For FileField objects
+                with open("media/" + file_obj.video_path.name, "rb") as file:
+                    for chunk in iter(lambda: file.read(chunk_size), b""):
+                        md5_hash.update(chunk)
+                path_list.clear()
+            elif isinstance(file_obj, str) and os.path.exists(file_obj):
+                # For file paths
+                with open(file_obj, "rb") as file:
+                    for chunk in iter(lambda: file.read(chunk_size), b""):
+                        md5_hash.update(chunk)
+                path_list.clear()
+                # else:
+                #     # For other cases (URLs, etc.)
+                #     return None
         return md5_hash.hexdigest()
 
     def check_duplicate(
@@ -66,31 +77,34 @@ class FileDuplicateChecker:
         If is True it's mean returning the path to the MD5's hash.
         :param file_obj:
         :param Union[VideoContentModel, AudioContentModel] model_class:
-        :param List[str] field_name_list:  Value by default has '["audio_path", "audio_url", "video_url", "video_path"]'
+        :param List[str] field_name_list:  Value by default has 'FIELD_NAME_LIST' or '["audio_path", "audio_url", "video_url", "video_path"]'
         :return:
         """
         field_name_list = (
-            field_name_list
-            if field_name_list is not None
-            else ["audio_path", "audio_url", "video_url", "video_path"]
+            field_name_list if field_name_list is not None else FIELD_NAME_LIST
         )
         try:
+            if isinstance(file_obj, str) and file_obj.startswith(
+                ("http://", "https://")
+            ):
+                return None
             file_md5 = self.calculate_md5(file_obj)
-
+            if not file_md5:
+                return None
             # Check the cache.
             if file_md5 in self.hash_map:
                 existing_path = self.hash_map[file_md5]
-                if self.storage.axists(existing_path):
-                    return existing_path
+                # if self.storage.exists(existing_path):
+                return existing_path
             # Check into the db.
             for field_name in field_name_list:
-                if file_md5 in hasattr(model_class, field_name):
+                if hasattr(model_class, field_name):
                     existing_path = self._check_in_database(
-                        model_class, field_name, file_md5
+                        model_class, file_md5, [field_name]
                     )
                     if existing_path:
                         file_path = getattr(existing_path, field_name)
-                        self.hash_map[file_path] = file_path
+                        self.hash_map[file_md5] = file_path
                         return file_path
             # Check into the file's source
             existing_path = self._check_in_storage(file_md5)
@@ -119,14 +133,12 @@ class FileDuplicateChecker:
         """
         Look up the files which could has the same names
         :param Union[VideoContentModel, AudioContentModel] model_class:
-        :param List[str] field_name_list:  Value by default has '["audio_path", "audio_url", "video_url", "video_path"]'
+        :param List[str] field_name_list:  Value by default has 'FIELD_NAME_LIST' or '["audio_path", "audio_url", "video_url", "video_path"]'
         :param str file_md5: this hash's string.
         :return:  Returning the obj from db or None
         """
         field_name_list = (
-            field_name_list
-            if field_name_list is not None
-            else ["audio_path", "audio_url", "video_url", "video_path"]
+            field_name_list if field_name_list is not None else FIELD_NAME_LIST
         )
         try:
             obj_iter = (obj for obj in model_class.objects.all())

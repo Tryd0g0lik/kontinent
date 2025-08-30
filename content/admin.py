@@ -55,12 +55,24 @@ class ContentInline(admin.StackedInline):
 
 class VideoContentInline(ContentInline):
     model = VideoContentModel
-    fields = ["title", "video_url", "subtitles_url", "order", "counter", "is_active"]
+    fields = [
+        "title",
+        "video_url",
+        "subtitles_url",
+        "order",
+        "counter",
+        "is_active",
+    ]
 
 
 class AudioContentInline(ContentInline):
     model = AudioContentModel
-    fields = ["title", "text", "order", "counter"]
+    fields = [
+        "title",
+        "text",
+        "order",
+        "counter",
+    ]
 
 
 @admin.register(PageModel)
@@ -78,7 +90,7 @@ class PageAdmin(admin.ModelAdmin):
 
 @admin.register(VideoContentModel)
 class VideoContentAdmin(admin.ModelAdmin):
-    list_display = ["title", "page", "counter", "order"]
+    list_display = ["title", "page", "counter", "order", "upload_status"]
     list_filter = [TitleStartsWithFilter, "page"]
     search_fields = ["title"]
     ordering = ["page", "order"]
@@ -86,7 +98,7 @@ class VideoContentAdmin(admin.ModelAdmin):
 
 @admin.register(AudioContentModel)
 class AudioContentAdmin(admin.ModelAdmin):
-    list_display = ["title", "page", "counter", "order"]
+    list_display = ["title", "page", "counter", "order", "upload_status"]
     list_filter = [TitleStartsWithFilter, "page"]
     search_fields = ["title"]
     ordering = ["page", "order"]
