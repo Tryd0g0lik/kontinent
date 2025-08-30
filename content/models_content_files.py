@@ -74,7 +74,7 @@ class VideoContentModel(ContentFileBaseModel):
     )
 
     def save(self, *args, **kwargs):
-        from content.tasks import task_process_video_upload, task_cleaning_media_root
+        from content.tasks import task_process_video_upload
 
         self.content_type = "video"
 
@@ -114,9 +114,9 @@ class VideoContentModel(ContentFileBaseModel):
                             path_template = (
                                 f"{datetime.now().strftime("%Y/%m/%d/")}video/"
                             )
-                            self.generate_filepath(path_template)
+                            self.generate_filepath(path_template, self.video_path.name)
                             self.__class__.objects.filter(pk=self.pk).update(
-                                video_path=path_template + file_path
+                                video_path="media/" + path_template + file_path
                             )
                     except Exception as error:
                         log.error(
@@ -128,9 +128,7 @@ class VideoContentModel(ContentFileBaseModel):
                                 error,
                             ),
                         )
-                task_cleaning_media_root.apply_async(
-                    args=[], kwargs={"path": "%s" % old_video_path.url}, countdown=60
-                )
+
             else:
                 with transaction.atomic():
                     with connections["default"].cursor() as cursor:
@@ -169,9 +167,10 @@ class VideoContentModel(ContentFileBaseModel):
             # task_process_video_upload.delay(self.id, file_data, file_name)
             task_process_video_upload(self.id, file_data, file_name)
 
-    def generate_filepath(self, instance):
+    def generate_filepath(self, instance, filename):
         from pathlib import Path
         from project.settings import MEDIA_ROOT
+        from content.tasks import task_cleaning_media_root
 
         olp_mkdr = MEDIA_ROOT.strip()
         path_iter = (p for p in instance.split("/"))
@@ -182,8 +181,11 @@ class VideoContentModel(ContentFileBaseModel):
                 if os.path.exists(f"{olp_mkdr}/{path_iter_next}")
                 else Path(olp_mkdr + "\\" + path_iter_next).mkdir()
             )
-            path_iter = False if len(path_iter_next) == 0 else None
+            path_iter = False if len(path_iter_next) == 0 else path_iter
             olp_mkdr += "\\" + path_iter_next
+        task_cleaning_media_root.apply_async(
+            args=[], kwargs={"path": "%s" % "media" + "\\" + filename }, countdown=60
+        )
 
     def set_video_file(self, file):
         """Метод для установки файла для фоновой обработки"""

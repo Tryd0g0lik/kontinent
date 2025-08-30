@@ -113,7 +113,7 @@ def task_process_video_upload(video_id, file_data, file_name):
         video.upload_status = "processing"
         video.asave()
         # Сохраняем файл во временное место
-        main_path = f"media/{video.video_path.name}"
+        main_path = f"{video.video_path.name}" if "media/" in video.video_path.name else "media/" + video.video_path.name
         temp_path = f'media/{file_name.split("/video/")[-1]}'
         with open(temp_path, "wb") as f:
             f.write(file_data)
@@ -146,7 +146,7 @@ def task_process_video_upload(video_id, file_data, file_name):
             # video.upload_status = "completed"
             # video.asave()
             # # Удаляем временный файл
-            os.remove(temp_path)
+            os.remove(temp_path)  if os.path.exists(temp_path) else None
             log.info(f"Using existing file: {duplicate_path}")
         else:
             # Сохраняем файл в постоянное место
@@ -163,7 +163,7 @@ def task_process_video_upload(video_id, file_data, file_name):
             fduplicate.add_file_hash(main_path, fduplicate.calculate_md5(main_path))
 
             # Удаляем временный файл
-            os.remove(temp_path)
+            os.remove(temp_path) if os.path.exists(temp_path) else None
             log.info(f"File uploaded successfully: {main_path}")
 
     except Exception as e:
