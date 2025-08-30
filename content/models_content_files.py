@@ -27,7 +27,7 @@ configure_logging(logging.INFO)
 def generate_filepath(instance, filename):
     from pathlib import Path
     from project.settings import MEDIA_ROOT
-    from content.tasks import task_cleaning_media_root
+    # from content.tasks import task_cleaning_media_root
 
     olp_mkdr = MEDIA_ROOT.strip()
     path_iter = (p for p in instance.split("/"))
@@ -40,9 +40,9 @@ def generate_filepath(instance, filename):
         )
         path_iter = False if len(path_iter_next) == 0 else path_iter
         olp_mkdr += "\\" + path_iter_next
-    task_cleaning_media_root.apply_async(
-        args=[], kwargs={"path": "%s" % "media" + "\\" + filename}, countdown=60
-    )
+    # task_cleaning_media_root.apply_async(
+    #     args=[], kwargs={"path": "%s" % "media" + "\\" + filename}, countdown=60
+    # )
 
 class VideoContentModel(ContentFileBaseModel):
     """

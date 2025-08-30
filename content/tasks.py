@@ -15,11 +15,10 @@ from dulwich.porcelain import remove
 from content.views import fduplicate
 
 
-from content.file_validator import FileDuplicateChecker
 from content.models_content_files import VideoContentModel, AudioContentModel
 from logs import configure_logging
-from project import settings
-from project.settings import MEDIA_PATH_TEMPLATE_AUDIO, MEDIA_URL
+
+from project.settings import MEDIA_URL
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -120,7 +119,7 @@ def task_process_video_upload(video_id, file_data, file_name):
 
         # check the duplacation
         duplicate_path = fduplicate.check_duplicate(
-            video, model_class=VideoContentModel, field_name_list=["video_path"]
+            file_name, model_class=VideoContentModel, field_name_list=["video_path"]
         )
 
         if duplicate_path:
@@ -218,11 +217,11 @@ def task_process_audio_upload(audio_id, file_data, file_name):
         raise
 
 
-@shared_task
-def task_cleaning_media_root(path: str):
-    """
-    This task has the timeout.
-    :param path:
-    :return:
-    """
-    os.remove(path) if os.path.exists(path) else None
+# @shared_task
+# def task_cleaning_media_root(path: str):
+#     """
+#     This task has the timeout.
+#     :param path:
+#     :return:
+#     """
+#     os.remove(path) if os.path.exists(path) else None

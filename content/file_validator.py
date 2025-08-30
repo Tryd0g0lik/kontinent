@@ -48,16 +48,20 @@ class FileDuplicateChecker:
             # Return the size to the beginning
             file_obj.seek(0)
         path_list = FIELD_NAME_LIST[:3].copy()
-        for path in path_list:
+        for path in path_list + ["video", "audio"]:
             if hasattr(file_obj, path):
                 # For FileField objects
-                with open(MEDIA_URL.lstrip("/") + file_obj.video_path.name, "rb") as file:
+                p = MEDIA_URL.lstrip("/") + file_obj.video_path.name if not "media/" in file_obj.video_path.name \
+                    else file_obj.video_path.name
+                with open(p, "rb") as file:
                     for chunk in iter(lambda: file.read(chunk_size), b""):
                         md5_hash.update(chunk)
                 path_list.clear()
-            elif isinstance(file_obj, str) and os.path.exists(file_obj):
+            elif isinstance(file_obj, str) and os.path.exists(file_obj if MEDIA_URL.lstrip("/") in file_obj\
+                    else MEDIA_URL.lstrip("/") + file_obj):
                 # For file paths
-                with open(file_obj, "rb") as file:
+                with open((file_obj if MEDIA_URL.lstrip("/") in file_obj\
+                    else MEDIA_URL.lstrip("/") + file_obj), "rb") as file:
                     for chunk in iter(lambda: file.read(chunk_size), b""):
                         md5_hash.update(chunk)
                 path_list.clear()
@@ -89,7 +93,7 @@ class FileDuplicateChecker:
             if not file_md5:
                 return None
             # Check the cache.
-            if file_md5 in self.hash_map:
+            if file_md5 in self.hash_map.keys():
                 existing_path = self.hash_map[file_md5]
                 # if self.storage.exists(existing_path):
                 return existing_path
