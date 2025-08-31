@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.core.files.storage import default_storage
 from project import settings
 from logs import configure_logging
-from content.models_content_files import VideoContentModel, AudioContentModel
+from content.models_content_files import (VideoContentModel, AudioContentModel)
 from project.settings import DEFAULT_CHUNK_SIZE, FIELD_NAME_LIST, MEDIA_URL
 
 log = logging.getLogger(__name__)
@@ -145,7 +145,8 @@ class FileDuplicateChecker:
         """
         Look up the files which could has the same names
         :param Union[VideoContentModel, AudioContentModel] model_class:
-        :param List[str] field_name_list:  Value by default has 'FIELD_NAME_LIST' or '["audio_path", "audio_url", "video_url", "video_path"]'
+        :param List[str] field_name_list:  Value by default \
+        has 'FIELD_NAME_LIST' or '["audio_path", "audio_url", "video_url", "video_path"]'
         :param str file_md5: this hash's string.
         :return:  Returning the obj from db or None
         """

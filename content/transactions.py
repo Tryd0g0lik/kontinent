@@ -7,11 +7,12 @@ from typing import Union
 
 from django.db import transaction, connections
 from logs import configure_logging
+from project.settings import ALLOWED_TABLES_CONTENT
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
-ALLOWED_TABLES_CONTENT = ["content_audiocontentmodel", "content_videocontentmodel"]
+
 
 
 def transaction_update(table_db: str, index: int, **kwargs) -> None:

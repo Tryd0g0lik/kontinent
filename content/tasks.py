@@ -167,6 +167,8 @@ def task_process_video_upload(video_id, temp_path, file_name) -> None:
             log.info(f"File uploaded successfully: {main_path}")
 
     except Exception as e:
+        kwargs = {"upload_status": "failed"}
+        transaction_update("content_videocontentmodel", video_id, **kwargs)
         log.error(message + f"Error processing video upload: {str(e)}")
         raise
 
@@ -241,5 +243,7 @@ def task_process_audio_upload(audio_id, temp_path: str, file_name: str) -> None:
             log.info(f"Audio file uploaded successfully: {main_path}")
 
     except Exception as e:
+        kwargs = {"upload_status": "failed"}
+        transaction_update("content_audiocontentmodel", audio_id, **kwargs)
         log.error(message + f"Error processing audio upload: {str(e)}")
         raise

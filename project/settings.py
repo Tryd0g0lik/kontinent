@@ -155,6 +155,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_PATH_TEMPLATE_AUDIO = "%Y/%m/%d/audio/"
 MEDIA_PATH_TEMPLATE_VIDEO = "%Y/%m/%d/video/"
 FIELD_NAME_LIST = ["audio_path","video_path", "video", "audio" ]
+# TABLE NAME FOR CONTENT
+ALLOWED_TABLES_CONTENT = ["content_audiocontentmodel", "content_videocontentmodel"]
 # Options for file's repository/source
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
