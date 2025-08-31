@@ -1,18 +1,23 @@
 """
 content/tasks.py
 """
+
 import os
 import logging
 from typing import List
 
+from celery.worker.control import time_limit
 from django.core.files.storage import default_storage
 from django.db import transaction, connections
 from django.db.models import F
 from celery import shared_task
+
 from content.views import fduplicate
 from content.models_content_files import VideoContentModel, AudioContentModel
-from logs import configure_logging
 from project.settings import MEDIA_URL
+from logs import configure_logging
+from content.transactions import transaction_update, transaction_get
+
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
@@ -93,23 +98,26 @@ def increment_content_counter(data_numbers_list: List[dict]) -> None:
         return
 
 
-@shared_task
-def task_process_video_upload(video_id, file_data, file_name):
+def task_process_video_upload(video_id, temp_path, file_name) -> None:
     """
     Background task for loading the video file
     """
-
     message = "%s: " % task_process_video_upload.__name__
     try:
-        video = VideoContentModel.objects.get(id=video_id)
-        video.upload_status = "processing"
-        video.asave()
-        # create file and timelive
-        main_path = f"{video.video_path.name}" if MEDIA_URL.lstrip("/") in video.video_path.name\
-            else "media/" + video.video_path.name
-        temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
-        with open(temp_path, "wb") as f:
-            f.write(file_data)
+        # Check the file exists
+        if not os.path.exists(temp_path):
+            log.info(f"Source file not found: {temp_path}")
+            raise FileNotFoundError(f"Source file not found: {temp_path}")
+
+        kwargs = {"upload_status": "processing"}
+        transaction_update("content_videocontentmodel", video_id, **kwargs)
+        video = transaction_get("content_videocontentmodel", video_id)
+        # create basis and temporary paths.
+        main_path = (
+            f"{video["video_path"]}"
+            if MEDIA_URL.lstrip("/") in video["video_path"]
+            else "media/" + video["video_path"]
+        )
 
         # check the duplacation
         duplicate_path = fduplicate.check_duplicate(
@@ -117,36 +125,40 @@ def task_process_video_upload(video_id, file_data, file_name):
         )
 
         if duplicate_path:
-            # If file exists we use the old file
-            with transaction.atomic():
-                # Connection to the db
-                with connections["default"].cursor() as cursor:
-                    try:
-                        # SQL
-                        cursor.execute(
-                            """
-                            UPDATE content_videocontentmodel SET video_path = "%s" WHERE id = %i;
-                            """
-                            % (duplicate_path, video.__getattribute__("id"))
-                        )
+            # If file exists we use the old file (file previously uploaded).
+            kwargs_dupl = {"video_path": duplicate_path}
+            transaction_update("content_videocontentmodel", video["id"], **kwargs_dupl)
 
-                    except Exception as error:
-                        log.info(message + f"ERROR => {error.args[0]}")
-                    finally:
-                        cursor.close()
             # remove the temporary file
-            os.remove(temp_path)  if os.path.exists(temp_path) else None
+            os.remove(temp_path) if os.path.exists(temp_path) else None
             log.info(f"Using existing file: {duplicate_path}")
         else:
+            folder = main_path.split("/")[-2]
+            file_name_0 = temp_path.split(temp_path.split("_")[0])[1][1:]
+            file_name_1 = main_path.split(folder)[1][1:]
+            main_path = (
+                main_path.split(folder)[0] + f"{folder}/" + file_name_0
+                if file_name_1 not in file_name_0
+                else main_path
+            )
             # create the basis file.
+            read_bool = True
             with open(temp_path, "rb") as source:
                 with open(main_path, "wb") as destination:
-                    destination.write(source.read())
-
-            video.video_path = main_path.split(MEDIA_URL.lstrip("/"))[-1]
-            video.upload_status = "completed"
-            video.asave()
-
+                    # updating the connection's state
+                    while read_bool:
+                        chunk = source.read(10 * 1024 * 1024)
+                        if chunk:
+                            destination.write(chunk)
+                        else:
+                            read_bool = False
+            kwargs_new = {
+                "video_path": MEDIA_URL.lstrip("/")
+                + main_path.split(MEDIA_URL.lstrip("/"))[-1],
+                "upload_status": "completed",
+            }
+            # Connection to the db
+            transaction_update("content_videocontentmodel", video["id"], **kwargs_new)
             # new file add to the cache of file's validation
             fduplicate.add_file_hash(main_path, fduplicate.calculate_md5(main_path))
 
@@ -155,47 +167,71 @@ def task_process_video_upload(video_id, file_data, file_name):
             log.info(f"File uploaded successfully: {main_path}")
 
     except Exception as e:
-        log.error(f"Error processing video upload: {str(e)}")
+        log.error(message + f"Error processing video upload: {str(e)}")
         raise
 
 
-@shared_task
-def task_process_audio_upload(audio_id, file_data, file_name):
+def task_process_audio_upload(audio_id, temp_path: str, file_name: str) -> None:
     """
     Background task for loading the audio file
     """
     try:
-        audio = AudioContentModel.objects.get(id=audio_id)
-        audio.upload_status = "processing"
-        audio.asave()
+        message = "%s: " % task_process_video_upload.__name__
+        # Check the file exists
+        if not os.path.exists(temp_path):
+            log.info(f"Source file not found: {temp_path}")
+            raise FileNotFoundError(f"Source file not found: {temp_path}")
+
+        kwargs = {"upload_status": "processing"}
+        transaction_update("content_videocontentmodel", audio_id, **kwargs)
+        audio = transaction_get("content_videocontentmodel", audio_id)
         # create temporary file (in 'media/<file>')
-        main_path = f"{MEDIA_URL.lstrip("/")}{audio.audio_path.name}"
-        temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
-        with open(temp_path, "wb") as f:
-            f.write(file_data)
+        main_path = (
+            f"{audio["video_path"]}"
+            if MEDIA_URL.lstrip("/") in audio["video_path"]
+            else "media/" + audio["video_path"]
+        )
 
         # check the duplacation
         duplicate_path = fduplicate.check_duplicate(
-            audio, model_class=AudioContentModel, field_name_list=["audio_path"]
+            file_name, model_class=AudioContentModel, field_name_list=["audio_path"]
         )
 
         if duplicate_path:
-            # If file exists we use the old file
-            audio.audio_path = duplicate_path
-            audio.upload_status = "completed"
-            audio.asave()
+            # If file exists we use the old file (file previously uploaded).
+            kwargs_dupl = {"video_path": duplicate_path}
+            transaction_update("content_audiocontentmodel", audio["id"], **kwargs_dupl)
+
             # Removing temporary file
-            os.remove(temp_path)
+            os.remove(temp_path) if os.path.exists(temp_path) else None
             log.info(f"Using existing audio file: {duplicate_path}")
         else:
+            folder = main_path.split("/")[-2]
+            file_name_0 = temp_path.split(temp_path.split("_")[0])[1][1:]
+            file_name_1 = main_path.split(folder)[1][1:]
+            main_path = (
+                main_path.split(folder)[0] + f"{folder}/" + file_name_0
+                if file_name_1 not in file_name_0
+                else main_path
+            )
             # Create the basis file
             with open(temp_path, "rb") as source:
                 with open(main_path, "wb") as destination:
-                    destination.write(source.read())
+                    # updating the connection's state
+                    while read_bool:
+                        chunk = source.read(10 * 1024 * 1024)
+                        if chunk:
+                            destination.write(chunk)
+                        else:
+                            read_bool = False
 
-            audio.video_path = main_path.split(MEDIA_URL.lstrip("/"))[-1]
-            audio.upload_status = "completed"
-            audio.asave()
+            kwargs_new = {
+                "audio_path": MEDIA_URL.lstrip("/")
+                + main_path.split(MEDIA_URL.lstrip("/"))[-1],
+                "upload_status": "completed",
+            }
+            # Connection to the db
+            transaction_update("content_audiocontentmodel", audio["id"], **kwargs_new)
 
             # Adding the server's path of file to the cash of the file's validator
             fduplicate.add_file_hash(main_path, fduplicate.calculate_md5(main_path))
@@ -205,5 +241,5 @@ def task_process_audio_upload(audio_id, file_data, file_name):
             log.info(f"Audio file uploaded successfully: {main_path}")
 
     except Exception as e:
-        log.error(f"Error processing audio upload: {str(e)}")
+        log.error(message + f"Error processing audio upload: {str(e)}")
         raise

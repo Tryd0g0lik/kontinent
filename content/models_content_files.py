@@ -2,31 +2,40 @@
 content/models_content_files.py
 """
 
+import asyncio
 import os
+import threading
 import uuid
 import logging
 from datetime import datetime
 
-from django.db import (models, connections, transaction)
+from django.db import models, connections, transaction
 from django.core import validators
 from django.utils.translation import gettext_lazy as _
-
-
 from content.models import ContentFileBaseModel
+from content.transactions import transaction_update
 from logs import configure_logging
 
 from project.settings import (
     MEDIA_PATH_TEMPLATE_AUDIO,
-    MEDIA_PATH_TEMPLATE_VIDEO, MEDIA_URL,
+    MEDIA_PATH_TEMPLATE_VIDEO,
+    MEDIA_URL,
 )
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
 
+def loop_upload(tusk_func, **kwargs):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(asyncio.to_thread(tusk_func, **kwargs))
+
+
 def generate_filepath(instance, filename):
     from pathlib import Path
     from project.settings import MEDIA_ROOT
+
     # from content.tasks import task_cleaning_media_root
 
     olp_mkdr = MEDIA_ROOT.strip()
@@ -40,9 +49,7 @@ def generate_filepath(instance, filename):
         )
         path_iter = False if len(path_iter_next) == 0 else path_iter
         olp_mkdr += "\\" + path_iter_next
-    # task_cleaning_media_root.apply_async(
-    #     args=[], kwargs={"path": "%s" % "media" + "\\" + filename}, countdown=60
-    # )
+
 
 class VideoContentModel(ContentFileBaseModel):
     """
@@ -91,7 +98,15 @@ class VideoContentModel(ContentFileBaseModel):
         editable=False,
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
+        """
+        Here is we only getting the line on db.
+        Note: This metho don't saving a file to the server. \
+        Tasks of Celery do saving files at server side
+        :param args:
+        :param kwargs:
+        :return:
+        """
         from content.tasks import task_process_video_upload
 
         self.content_type = "video"
@@ -104,13 +119,22 @@ class VideoContentModel(ContentFileBaseModel):
             file_data = self._video_file.read()
             file_name = f"{uuid.uuid4()}_{self._video_file.name}"
             super().save(*args, **kwargs)
-            task_process_video_upload.delay(self.id, file_data, file_name)
+            kwargs_video = {
+                "video_id": self.id,
+                "file_data": file_data,
+                "file_name": file_name,
+            }
+
+            threading.Thread(
+                target=loop_upload,
+                args=(task_process_video_upload,),
+                kwargs=kwargs_video,
+            ).start()
         if hasattr(self, "video_path") and self.upload_status != "completed":
             self.upload_status = "processing"
             self.set_video_file(self.video_path)
 
             # TASK
-            file_data = self._video_file.read()
             video_title = self._video_file.name.split("/")[-1]
             file_name = f"{self._video_file.name}".replace(
                 video_title, f"{uuid.uuid4()}_{video_title}"
@@ -134,7 +158,9 @@ class VideoContentModel(ContentFileBaseModel):
                             )
                             generate_filepath(path_template, self.video_path.name)
                             self.__class__.objects.filter(pk=self.pk).update(
-                                video_path=MEDIA_URL.lstrip("/") + path_template + file_path
+                                video_path=MEDIA_URL.lstrip("/")
+                                + path_template
+                                + file_path
                             )
                     except Exception as error:
                         log.error(
@@ -148,45 +174,40 @@ class VideoContentModel(ContentFileBaseModel):
                         )
 
             else:
-                with transaction.atomic():
-                    with connections["default"].cursor() as cursor:
-                        try:
-                            cursor.execute(
-                                """
-                                UPDATE content_videocontentmodel VALUES(
-                                %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                                ) WHERE id = %s;
-                            """
-                                % (
-                                    self.title,
-                                    self.counter,
-                                    self.order,
-                                    self.content_type,
-                                    self.video_url,
-                                    self.subtitles_url,
-                                    self.video_path,
-                                    self.is_active,
-                                    self.upload_status,
-                                    self.id,
-                                )
-                            )
-                        except Exception as error:
-                            log.error(
-                                "%s: ERROR => %s",
-                                (
-                                    VideoContentModel.__class__.__name__
-                                    + "."
-                                    + self.save.__name__,
-                                    error,
-                                ),
-                            )
-                        finally:
-                            cursor.close()
-            # task_process_video_upload.delay(self.id, file_data, file_name)
-            task_process_video_upload(self.id, file_data, file_name)
+                kwargs_audio = {
+                    "title": self.title,
+                    "counter": self.counter,
+                    "order": self.order,
+                    "content_type": self.content_type,
+                    "video_url": self.video_url,
+                    "subtitles_url": self.subtitles_url,
+                    "video_path": self.video_path,
+                    "is_active": self.is_active,
+                    "upload_status": self.upload_status,
+                }
+                transaction_update("content_videocontentmodel", self.id, **kwargs_audio)
+
+            # Temporary file
+            temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
+            kwargs_video = {
+                "video_id": self.id,
+                "temp_path": temp_path,
+                "file_name": file_name,
+            }
+            # create the temporary file
+            read_bool = True
+            with open(temp_path, "wb") as f:
+                while read_bool:
+                    chunk = self._video_file.read(10 * 1024 * 1024)
+                    if chunk:
+                        f.write(chunk)
+                    else:
+                        read_bool = False
+
+            threading.Thread(target=loop_upload, kwargs=kwargs_video).start()
 
     def set_video_file(self, file):
-        """Метод для установки файла для фоновой обработки"""
+        """Method for sending a file to the initial file's processing"""
 
         self._video_file = file
 
@@ -241,7 +262,15 @@ class AudioContentModel(ContentFileBaseModel):
         editable=False,
     )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
+        """
+        Here is we only getting the line on db.
+        Note: This metho don't saving a file to the server. \
+        Tasks of Celery do saving files at server side
+        :param args:
+        :param kwargs:
+        :return:
+        """
         from content.tasks import task_process_audio_upload
 
         self.content_type = "video"
@@ -254,13 +283,22 @@ class AudioContentModel(ContentFileBaseModel):
             file_data = self._audio_file.read()
             file_name = f"{uuid.uuid4()}_{self._audio_file.name}"
             super().save(*args, **kwargs)
-            task_process_audio_upload.delay(self.id, file_data, file_name)
+            kwargs_audio = {
+                "video_id": self.id,
+                "file_data": file_data,
+                "file_name": file_name,
+            }
+
+            threading.Thread(
+                target=loop_upload,
+                args=(task_process_audio_upload,),
+                kwargs=kwargs_audio,
+            ).start()
         if hasattr(self, "audio_path") and self.upload_status != "completed":
             self.upload_status = "processing"
             self.set_audio_file(self.audio_path)
 
             # TASK
-            file_data = self._audio_file.read()
             video_title = self._audio_file.name.split("/")[-1]
             file_name = f"{self._audio_file.name}".replace(
                 video_title, f"{uuid.uuid4()}_{video_title}"
@@ -284,7 +322,9 @@ class AudioContentModel(ContentFileBaseModel):
                             )
                             generate_filepath(path_template, self.audio_path.name)
                             self.__class__.objects.filter(pk=self.pk).update(
-                                audio_path=MEDIA_URL.lstrip("/") + path_template + file_path
+                                audio_path=MEDIA_URL.lstrip("/")
+                                + path_template
+                                + file_path
                             )
                     except Exception as error:
                         log.error(
@@ -298,42 +338,38 @@ class AudioContentModel(ContentFileBaseModel):
                         )
 
             else:
-                with transaction.atomic():
-                    with connections["default"].cursor() as cursor:
-                        try:
-                            cursor.execute(
-                                """
-                                UPDATE content_videocontentmodel VALUES(
-                                %s, %s, %s, %s, %s, %s, %s, %s, 
-                                ) WHERE id = %s;
-                            """
-                                % (
-                                    self.title,
-                                    self.counter,
-                                    self.order,
-                                    self.content_type,
-                                    self.audio_url,
-                                    self.audio_path,
-                                    self.is_active,
-                                    self.upload_status,
-                                    self.id,
-                                )
-                            )
-                        except Exception as error:
-                            log.error(
-                                "%s: ERROR => %s",
-                                (
-                                    AudioContentModel.__class__.__name__
-                                    + "."
-                                    + self.save.__name__,
-                                    error,
-                                ),
-                            )
-                        finally:
-                            cursor.close()
-            task_process_audio_upload(self.id, file_data, file_name)
+                kwargs_audio = {
+                    "title": self.title,
+                    "counter": self.counter,
+                    "order": self.order,
+                    "content_type": self.content_type,
+                    "audio_url": self.audio_url,
+                    "audio_path": self.audio_path,
+                    "is_active": self.is_active,
+                    "upload_status": self.upload_status,
+                }
+                transaction_update("content_audiocontentmodel", self.id, **kwargs_audio)
+
+            # Temporary file
+            temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
+            kwargs_audio = {
+                "video_id": self.id,
+                "temp_path": temp_path,
+                "file_name": file_name,
+            }
+            # create the temporary file
+            read_bool = True
+            with open(temp_path, "wb") as f:
+                while read_bool:
+                    chunk = self._audio_file.read(10 * 1024 * 1024)
+                    if chunk:
+                        f.write(chunk)
+                    else:
+                        read_bool = False
+            threading.Thread(target=loop_upload, kwargs=kwargs_audio).start()
+
     def set_audio_file(self, file):
-        """Метод для установки файла для фоновой обработки"""
+        """Method for sending a file to the initial file's processing"""
         self._audio_file = file
 
     class Meta:

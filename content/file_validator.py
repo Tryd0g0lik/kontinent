@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.core.files.storage import default_storage
 from project import settings
 from logs import configure_logging
-from content.models_content_files import (VideoContentModel, AudioContentModel)
+from content.models_content_files import VideoContentModel, AudioContentModel
 from project.settings import DEFAULT_CHUNK_SIZE, FIELD_NAME_LIST, MEDIA_URL
 
 log = logging.getLogger(__name__)
@@ -47,21 +47,33 @@ class FileDuplicateChecker:
                 md5_hash.update(chunk)
             # Return the size to the beginning
             file_obj.seek(0)
-        path_list = FIELD_NAME_LIST[:3].copy()
-        for path in path_list + ["video", "audio"]:
+        path_list = FIELD_NAME_LIST.copy()
+        for path in path_list:
             if hasattr(file_obj, path):
                 # For FileField objects
-                p = MEDIA_URL.lstrip("/") + file_obj.video_path.name if not "media/" in file_obj.video_path.name \
+                p = (
+                    MEDIA_URL.lstrip("/") + file_obj.video_path.name
+                    if "media/" not in file_obj.video_path.name
                     else file_obj.video_path.name
+                )
                 with open(p, "rb") as file:
                     for chunk in iter(lambda: file.read(chunk_size), b""):
                         md5_hash.update(chunk)
                 path_list.clear()
-            elif isinstance(file_obj, str) and os.path.exists(file_obj if MEDIA_URL.lstrip("/") in file_obj\
-                    else MEDIA_URL.lstrip("/") + file_obj):
+            elif isinstance(file_obj, str) and os.path.exists(
+                file_obj
+                if MEDIA_URL.lstrip("/") in file_obj
+                else MEDIA_URL.lstrip("/") + file_obj
+            ):
                 # For file paths
-                with open((file_obj if MEDIA_URL.lstrip("/") in file_obj\
-                    else MEDIA_URL.lstrip("/") + file_obj), "rb") as file:
+                with open(
+                    (
+                        file_obj
+                        if MEDIA_URL.lstrip("/") in file_obj
+                        else MEDIA_URL.lstrip("/") + file_obj
+                    ),
+                    "rb",
+                ) as file:
                     # for chunk in iter(lambda: file.read(size=chunk_size), b""):
                     md5_hash.update(file.read())
                 path_list.clear()

@@ -244,6 +244,13 @@ def increment_content_counter(data_numbers_list: List[dict]) -> None:
 - имя нового контента добавить в настроки приложения "`project/settings.py::CONTENT_TYPES_CHOICES`";
 - создать модель и на входе наследуясь от "`content.models.ContentFileBaseModel`".
 
+## Duplication of files & 'md5' library
+Работа с файла включает человеский файктор, когда мы:
+- дважды загружаем один и тотже файл; 
+- загружаем тот же файл, но просто переименованный.
+
+Создан валидатор файлов "`content.file_validator.FileDuplicateChecker`"
+
 ## Админ-панель
 ![admin](./img/admin.png)
 
