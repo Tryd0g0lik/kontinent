@@ -17,3 +17,4 @@ kombu[redis]>=5.0.0
 redis-cli>=1.0.1
 psycopg2-binary>=2.9.10
 cfgv>=3.4.0
+postgres>=4.0
