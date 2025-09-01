@@ -111,6 +111,27 @@ mateImageAI/
 
 ``` 
 ---
+### .ENV
+
+```
+SECRET_KEY_DJ=< seckret_key_fo_django >
+POSTGRES_DB=< data_base_name >
+POSTGRES_USER=< database_user >
+POSTGRES_HOST=< database_host >
+POSTGRES_PORT=5432
+POSTGRES_PASSWORD=< database_pass >
+APP_TIME_ZONE=Asia/Krasnoyarsk
+DB_ENGINE=django.db.backends.postgresql
+DB_TO_REMOTE_HOST=< server_host >
+DATABASE_LOCAL=truckdriver_db.sqlite3
+DATABASE_ENGINE_LOCAL=django.db.backends.sqlite3
+
+# Database Configuration Redis
+DB_TO_RADIS_PORT=6381
+DB_TO_RADIS_HOST=< redis_host >
+```
+
+---
 ### Commands
 
 ```
