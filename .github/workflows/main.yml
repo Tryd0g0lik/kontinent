@@ -34,4 +34,4 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            expect /home/denis/redis/pull.exp
+            expect /home/denis/kontinent/pull.exp
