@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv_ import (POSTGRES_HOST, POSTGRES_PORT, DB_ENGINE, SECRET_KEY_DJ, DB_TO_REMOTE_HOST,
                      DATABASE_LOCAL, DATABASE_ENGINE_LOCAL, APP_TIME_ZONE, POSTGRES_DB, POSTGRES_USER,
-                     POSTGRES_PASSWORD)
+                     POSTGRES_PASSWORD, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -169,10 +169,19 @@ DEFAULT_CHARSET = "utf-8"
 
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
-    f"http://{DB_TO_REMOTE_HOST}",
+    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
 ]
+
+# https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration
+# https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
+# This is list from private of URL
+CSRF_TRUSTED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 # Allow the methods to the methods in HTTP
