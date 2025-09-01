@@ -2,7 +2,7 @@ name: Django_pages
 
 on:
   push:
-    branches: ['master']
+    branches: ['cicd']
 
 jobs:
   deploy_kontinent:

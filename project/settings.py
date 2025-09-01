@@ -15,7 +15,8 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv_ import (POSTGRES_HOST, POSTGRES_PORT, DB_ENGINE, SECRET_KEY_DJ, DB_TO_REMOTE_HOST,
-                     DATABASE_LOCAL, DATABASE_ENGINE_LOCAL, APP_TIME_ZONE)
+                     DATABASE_LOCAL, DATABASE_ENGINE_LOCAL, APP_TIME_ZONE, POSTGRES_DB, POSTGRES_USER,
+                     POSTGRES_PASSWORD)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -88,19 +89,19 @@ ASGI_APPLICATION = "project.asgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
-        'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
-    },
     # "default": {
-    #     'ENGINE': f'{DB_ENGINE}',
-    #     'NAME': f'{POSTGRES_DB}',
-    #     'USER': f'{POSTGRES_USER}',
-    #     'PASSWORD': POSTGRES_PASSWORD,
-    #     'HOST': f'{POSTGRES_HOST}',
-    #     'PORT': f'{POSTGRES_PORT}',
-    #     "KEY_PREFIX": "drive_", # it's my prefix for the keys
-    # }
+    #     'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
+    #     'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
+    # },
+    "default": {
+        'ENGINE': f'{DB_ENGINE}',
+        'NAME': f'{POSTGRES_DB}',
+        'USER': f'{POSTGRES_USER}',
+        'PASSWORD': POSTGRES_PASSWORD,
+        'HOST': f'{POSTGRES_HOST}',
+        'PORT': f'{POSTGRES_PORT}',
+        "KEY_PREFIX": "drive_", # it's my prefix for the keys
+    }
 }
 # '''CELERY"""
 # 'celeryconfig.py' contains more information,
