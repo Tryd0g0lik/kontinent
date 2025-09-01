@@ -15,7 +15,8 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv_ import (POSTGRES_HOST, POSTGRES_PORT, DB_ENGINE, SECRET_KEY_DJ, DB_TO_REMOTE_HOST,
-                     DATABASE_LOCAL, DATABASE_ENGINE_LOCAL, APP_TIME_ZONE)
+                     DATABASE_LOCAL, DATABASE_ENGINE_LOCAL, APP_TIME_ZONE, POSTGRES_DB, POSTGRES_USER,
+                     POSTGRES_PASSWORD, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -26,8 +27,8 @@ if not SECRET_KEY:
     raise ValueError("SECRET_KEY must be set in environment variables")
 
 ALLOWED_HOSTS = [
-    '127.0.0.1',
     f"{DB_TO_REMOTE_HOST}",
+    '127.0.0.1',
     '0.0.0.0',
 ]
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -88,19 +89,19 @@ ASGI_APPLICATION = "project.asgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
-        'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
-    },
     # "default": {
-    #     'ENGINE': f'{DB_ENGINE}',
-    #     'NAME': f'{POSTGRES_DB}',
-    #     'USER': f'{POSTGRES_USER}',
-    #     'PASSWORD': POSTGRES_PASSWORD,
-    #     'HOST': f'{POSTGRES_HOST}',
-    #     'PORT': f'{POSTGRES_PORT}',
-    #     "KEY_PREFIX": "drive_", # it's my prefix for the keys
-    # }
+    #     'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
+    #     'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
+    # },
+    "default": {
+        'ENGINE': f'{DB_ENGINE}',
+        'NAME': f'{POSTGRES_DB}',
+        'USER': f'{POSTGRES_USER}',
+        'PASSWORD': POSTGRES_PASSWORD,
+        'HOST': f'{POSTGRES_HOST}',
+        'PORT': f'{POSTGRES_PORT}',
+        "KEY_PREFIX": "drive_", # it's my prefix for the keys
+    }
 }
 # '''CELERY"""
 # 'celeryconfig.py' contains more information,
@@ -168,10 +169,19 @@ DEFAULT_CHARSET = "utf-8"
 
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
-    f"http://{DB_TO_REMOTE_HOST}:{POSTGRES_PORT}",
     "http://0.0.0.0:8000",
 ]
+
+# https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration
+# https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
+# This is list from private of URL
+CSRF_TRUSTED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 # Allow the methods to the methods in HTTP

@@ -54,14 +54,6 @@ class ContentPolymorphicSerializer(serializers.ModelSerializer):
         return None
 
 
-class PageListSerializer(serializers.ModelSerializer):
-    url = HyperlinkedIdentityField(view_name="page-detail", lookup_field="pk")
-
-    class Meta:
-        model = PageModel
-        fields = ["title", "url"] + AudioContentSerializer.Meta.fields
-
-
 class PageDetailSerializer(serializers.ModelSerializer):
     contents = SerializerMethodField()
 

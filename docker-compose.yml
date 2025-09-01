@@ -29,11 +29,11 @@ services:
                 python3 ./manage.py migrate
                 python3 ./manage.py collectstatic --clear --noinput
                 echo "Creating superuser ..."
-                python3 ./manager.py shell -c "
+                python3 ./manage.py shell -c "
                 from django.contrib.auth import get_user_model
                 User = get_user_model()
                 if not User.objects.filter(username='root').exists():
-                    User.objects.filter(username='root', 'admin@example.com', '123456789')
+                    User.objects.create_superuser(username='admin', email='admin@example.com', password='123456789')
                     print('Superuser created successfully')
                 else:
                     print('Superuser already exists')

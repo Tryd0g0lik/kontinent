@@ -1,3 +1,18 @@
+## CSRF проблема
+
+На момент отправки данного проекта вам на проверку, gsnfkcz выложиnm его на свой сервер. и наполнить контентом.\
+Если ещё минуты назад всё проходило без проблем, заполнял контентом и тестировал, то сейчас не могу это сделать.\
+Вот фасть логов\
+![csrf](./img/CSRF.png)
+
+Конечно, чать хекерских API, я попыталдся DROP-нуть\
+![csrf_drop](./img/CSRF_drop.png)
+
+Пкаозиторий имеет докер файл. \
+APP изначально разрабатывал на daphne. Поэтому поднять у себя вы сможете, уверен.
+
+
+
 ## Вопрос & Ответ
 *Что было сделано.*\
 Вся логика app строится вокруг полей которые выбирают ыайлы из локального диска самого пользователя.\
@@ -62,7 +77,7 @@
 | "`Celery`"           | "`Radis`"                     | "`PostgreSQL` or "`ASQLite`" |
 | "`daphne`"           | "`Signal`"                    | "`pytest`"                |
 | [swagger](./swagger) | [nginx](./nginx/default.conf) |[docker-compose](./docker-compose.yml)   |
-| "`asincio`"              | "`threading`"                     | |
+| "`asincio`"              | "`threading`"                     |"`GitHub Action`" |
 
 ---
 ### Tree
@@ -111,6 +126,27 @@ mateImageAI/
 
 ``` 
 ---
+### .ENV
+
+```
+SECRET_KEY_DJ=< seckret_key_fo_django >
+POSTGRES_DB=< data_base_name >
+POSTGRES_USER=< database_user >
+POSTGRES_HOST=< database_host >
+POSTGRES_PORT=5432
+POSTGRES_PASSWORD=< database_pass >
+APP_TIME_ZONE=Asia/Krasnoyarsk
+DB_ENGINE=django.db.backends.postgresql
+DB_TO_REMOTE_HOST=< server_host >
+DATABASE_LOCAL=truckdriver_db.sqlite3
+DATABASE_ENGINE_LOCAL=django.db.backends.sqlite3
+
+# Database Configuration Redis
+DB_TO_RADIS_PORT=6381
+DB_TO_RADIS_HOST=< redis_host >
+```
+
+---
 ### Commands
 
 ```
@@ -149,6 +185,13 @@ File "`project/settings.py`" have a basis option plus:
 * "`swagger/`";
 * "`redoc/`";
 * "`swagger<format>/`".
+
+
+### /swagger/
+![swagger](./img/swagger.png)
+
+### /redoc/
+![redoc](./img/redoc.png)
 
 ----
 ### Типизацию
@@ -325,3 +368,7 @@ def increment_content_counter(data_numbers_list: List[dict]) -> None:
 
 ### Note: 
 Файлы не скидываются все в одну "кашу".
+
+---
+# Docker
+![docker-compose](./img/docker.png)

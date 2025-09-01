@@ -13,8 +13,11 @@ import threading
 from typing import List
 
 from cfgv import ValidationError
+from django.db.models.expressions import result
 from django.http import HttpRequest
 from django.core.cache import cache
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, serializers
 from rest_framework.response import Response
 from adrf.viewsets import ReadOnlyModelViewSet as AsyncReadOnlyModelViewSet
@@ -33,6 +36,118 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
     queryset = PageModel.objects.all()
     serializer_class = PageDetailSerializer
 
+    @swagger_auto_schema(
+        operation_description="Retrieve a paginated list of API pages with their contents",
+        tags=["content"],
+        responses={
+            200: openapi.Response(
+                description="Paginated list of API pages",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "count": openapi.Schema(type=openapi.TYPE_INTEGER, example=1),
+                        "next": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=None, nullable=True
+                        ),
+                        "previous": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=None, nullable=True
+                        ),
+                        "results": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER, example=2
+                                    ),
+                                    "contents": openapi.Schema(
+                                        type=openapi.TYPE_ARRAY,
+                                        items=openapi.Schema(
+                                            type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                "id": openapi.Schema(
+                                                    type=openapi.TYPE_INTEGER, example=2
+                                                ),
+                                                "title": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    example="New page",
+                                                ),
+                                                "counter": openapi.Schema(
+                                                    type=openapi.TYPE_INTEGER, example=0
+                                                ),
+                                                "order": openapi.Schema(
+                                                    type=openapi.TYPE_INTEGER, example=2
+                                                ),
+                                                "content_type": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    example="video",
+                                                ),
+                                                "is_active": openapi.Schema(
+                                                    type=openapi.TYPE_BOOLEAN,
+                                                    example=False,
+                                                ),
+                                                "video_path": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    example="/media/2025/08/27/video/my_first_video.mp4",
+                                                ),
+                                                "video_url": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    example=None,
+                                                    nullable=True,
+                                                ),
+                                                "subtitles_url": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    example=None,
+                                                    nullable=True,
+                                                ),
+                                            },
+                                        ),
+                                    ),
+                                    "created_at": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                        example="2025-08-27T16:39:30.072225+07:00",
+                                    ),
+                                    "updated_at": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                        example="2025-08-27T16:39:30.073226+07:00",
+                                    ),
+                                    "url": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example="http://dasdas.ru/freelance_django/",
+                                    ),
+                                    "title": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example="New Video Content",
+                                    ),
+                                    "text": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example="This is page's text. Basis content.",
+                                    ),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            400: "Error => <text of error>",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="Number of results per page",
+                type=openapi.TYPE_INTEGER,
+            ),
+        ],
+    )
     async def list(self, request: HttpRequest, *args, **kwargs) -> Response:
         """
         Method: Get.
@@ -116,6 +231,88 @@ class PageDetailView(AsyncReadOnlyModelViewSet):
             )
             return response
 
+    @swagger_auto_schema(
+        operation_description="Retrieve a single API page with its contents",
+        tags=["content"],
+        responses={
+            200: openapi.Response(
+                description="Single API page",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(
+                            type=openapi.TYPE_INTEGER,
+                            format=openapi.FORMAT_INT64,
+                            example=1,
+                        ),
+                        "contents": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER, example=2
+                                    ),
+                                    "title": openapi.Schema(
+                                        type=openapi.TYPE_STRING, example="New page"
+                                    ),
+                                    "counter": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER, example=4
+                                    ),
+                                    "order": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER, example=2
+                                    ),
+                                    "content_type": openapi.Schema(
+                                        type=openapi.TYPE_STRING, example="video"
+                                    ),
+                                    "is_active": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN, example=False
+                                    ),
+                                    "video_path": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example="/media/2025/08/27/video/my_first_video.mp4",
+                                    ),
+                                    "video_url": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example=None,
+                                        nullable=True,
+                                    ),
+                                    "subtitles_url": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        example=None,
+                                        nullable=True,
+                                    ),
+                                },
+                            ),
+                        ),
+                        "created_at": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            format=openapi.FORMAT_DATETIME,
+                            example="2025-08-27T16:39:30.072225+07:00",
+                        ),
+                        "updated_at": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            format=openapi.FORMAT_DATETIME,
+                            example="2025-08-27T16:39:30.073226+07:00",
+                        ),
+                        "url": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="http://dasdas.ru/freelance_django/",
+                        ),
+                        "title": openapi.Schema(
+                            type=openapi.TYPE_STRING, example="New Video Content"
+                        ),
+                        "text": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="This is page's text. Basis content.",
+                        ),
+                    },
+                ),
+            ),
+            400: "Error => < text of error >",
+        },
+        manual_parameters=[],
+    )
     async def retrieve(self, request, *args, **kwargs) -> Response:
         """
         Method: Get.
