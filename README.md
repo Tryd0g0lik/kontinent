@@ -62,7 +62,7 @@
 | "`Celery`"           | "`Radis`"                     | "`PostgreSQL` or "`ASQLite`" |
 | "`daphne`"           | "`Signal`"                    | "`pytest`"                |
 | [swagger](./swagger) | [nginx](./nginx/default.conf) |[docker-compose](./docker-compose.yml)   |
-| "`asincio`"              | "`threading`"                     | |
+| "`asincio`"              | "`threading`"                     |"`GitHub Action`" |
 
 ---
 ### Tree
@@ -325,3 +325,7 @@ def increment_content_counter(data_numbers_list: List[dict]) -> None:
 
 ### Note: 
 Файлы не скидываются все в одну "кашу".
+
+---
+# Docker
+![docker-compose](./img/docker.png)
