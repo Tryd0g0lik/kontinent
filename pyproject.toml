@@ -22,6 +22,8 @@ django-rest-framework-async = "^0.1.0"
 drf-yasg = "^1.21.10"
 daphne = "^4.2.1"
 redis = "^6.4.0"
+psycopg2-binary = ">=2.9.10"
+postgres = ">=4.0"
 
 
 [tool.poetry.group.dev.dependencies]
