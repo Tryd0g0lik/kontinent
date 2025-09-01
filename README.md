@@ -150,6 +150,13 @@ File "`project/settings.py`" have a basis option plus:
 * "`redoc/`";
 * "`swagger<format>/`".
 
+
+### /swagger/
+![swagger](./img/swagger.png)
+
+### /redoc/
+![redoc](./img/redoc.png)
+
 ----
 ### Типизацию
 
