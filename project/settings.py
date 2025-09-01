@@ -169,8 +169,8 @@ DEFAULT_CHARSET = "utf-8"
 
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_REMOTE_HOST}",
     "http://127.0.0.1:8000",
-    f"http://{DB_TO_REMOTE_HOST}:{POSTGRES_PORT}",
     "http://0.0.0.0:8000",
 ]
 
