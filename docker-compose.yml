@@ -43,6 +43,7 @@ services:
         volumes:
            - ./:/www/src
            - volume_static:/www/src/collectstatic
+           - media_volume:/www/src/media
         depends_on:
           - db
           - redis
@@ -60,6 +61,8 @@ services:
         #command:
          #   - --bind 0.0.0.0
         volumes:
+            - static_volume:/www/src/staticfiles:ro
+            - media_volume:/www/src/media:ro
             - redis_data:/data
         depends_on:
             - db
@@ -99,3 +102,4 @@ services:
 volumes:
     redis_data:
     volume_static:
+    media_volume:
