@@ -61,7 +61,7 @@ services:
         #command:
          #   - --bind 0.0.0.0
         volumes:
-            - static_volume:/www/src/collectstatic
+            - volume_static:/www/src/collectstatic
             - media_volume:/www/src/media
             - redis_data:/data
         depends_on:
