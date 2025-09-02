@@ -153,7 +153,8 @@ DB_TO_RADIS_HOST=< redis_host >
 py manage.py collectstatic
 py manage.py makemigrations
 py manage.py migrate
-py manage.py runserver
+py manage.py runserver # develop
+daphne project.asgi:application # mode: develop & poduction 
 git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s' # история развития проекта
 ```
 #### Note:

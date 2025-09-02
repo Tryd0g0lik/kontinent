@@ -32,7 +32,7 @@ ALLOWED_HOSTS = [
     '0.0.0.0',
 ]
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Application definition
 
@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
@@ -61,6 +62,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+# '''WHITEnOISE'''
+# for a static files in production
+# https://whitenoise.readthedocs.io/en/stable/django.html
+WHITENOISE_MAX_AGE = 31536000  # static cache by 1 year
+WHITENOISE_USE_FINDERS = True
 
 ROOT_URLCONF = "project.urls"
 
@@ -148,7 +154,7 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.path.join(BASE_DIR,  "collectstatic/")
 STATIC_URL = '/static/'
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -169,6 +175,7 @@ DEFAULT_CHARSET = "utf-8"
 
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_REMOTE_HOST}:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
@@ -178,6 +185,7 @@ CORS_ALLOWED_ORIGINS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 # This is list from private of URL
 CSRF_TRUSTED_ORIGINS = [
+    f"http://{DB_TO_REMOTE_HOST}:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
@@ -208,11 +216,23 @@ CORS_ALLOW_HEADERS = [
     "Content-Language"
 ]
 
-# ***REST_FRAMEWORK
+# ***REST_FRAMEWORK***
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+SECURE_SSL_REDIRECT = False # т.к. запуск на http:
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
+if DEBUG:
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    WHITENOISE_MAX_AGE = 0
+    WHITENOISE_USE_FINDERS = False
 
 # '''lOGGING'''
 LOGGING = {
