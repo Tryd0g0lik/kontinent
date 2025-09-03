@@ -27,7 +27,7 @@ if not SECRET_KEY:
     raise ValueError("SECRET_KEY must be set in environment variables")
 
 ALLOWED_HOSTS = [
-    f"{DB_TO_REMOTE_HOST}",
+    '83.166.245.209',
     '127.0.0.1',
     '0.0.0.0',
 ]
@@ -175,6 +175,7 @@ DEFAULT_CHARSET = "utf-8"
 
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_REMOTE_HOST}",
     f"http://{DB_TO_REMOTE_HOST}:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
@@ -185,6 +186,7 @@ CORS_ALLOWED_ORIGINS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 # This is list from private of URL
 CSRF_TRUSTED_ORIGINS = [
+    f"http://{DB_TO_REMOTE_HOST}",
     f"http://{DB_TO_REMOTE_HOST}:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
