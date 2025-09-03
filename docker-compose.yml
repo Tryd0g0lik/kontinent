@@ -121,18 +121,18 @@ volumes:
 networks:
     backend:
         driver: bridge
-        driver_opts:
-            com.docker.network.driver.mtu: 1450 # Option from REG.ru
+#        driver_opts:
+#            com.docker.network.driver.mtu: 1450 # Option from REG.ru
     database:
         driver: bridge
         internal: true
-        driver_opts:
-            com.docker.network.driver.mtu: 1450 # Option from REG.ru
+#        driver_opts:
+#            com.docker.network.driver.mtu: 1450 # Option from REG.ru
     queue:
         driver: bridge
-        driver_opts:
-            com.docker.network.driver.mtu: 1450 # Option from REG.ru
+#        driver_opts:
+#            com.docker.network.driver.mtu: 1450 # Option from REG.ru
     frontend:
         driver: bridge
-        driver_opts:
-            com.docker.network.driver.mtu: 1450 # Option from REG.ru
+#        driver_opts:
+#            com.docker.network.driver.mtu: 1450 # Option from REG.ru
