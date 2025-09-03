@@ -15,6 +15,8 @@ services:
             retries: 5
         ports:
             - "5432:5432"
+        networks:
+            - database
     backend:
         container_name: kontinent
         build:
@@ -33,7 +35,7 @@ services:
                 from django.contrib.auth import get_user_model
                 User = get_user_model()
                 if not User.objects.filter(username='root').exists():
-                    User.objects.create_superuser(username='root', email='admin@example.com', password='123456789')
+                    User.objects.create_superuser(username='admin', email='admin@example.com', password='123456789')
                     print('Superuser created successfully')
                 else:
                     print('Superuser already exists')
@@ -49,6 +51,9 @@ services:
           - redis
         ports:
           - "8000:8000"
+        networks:
+            - backend
+            - database
     redis:
         container_name: redis_kontinent
         image: redis:7.2-alpine
@@ -69,6 +74,8 @@ services:
         ports:
             - "6381:6379"
         restart: unless-stopped
+        networks:
+            - queue
     celery:
         container_name: celery_kontinent
         build:
@@ -86,6 +93,10 @@ services:
             - db
             - redis
         restart: unless-stopped
+        networks:
+            - queue
+            - backend
+            - database
 
     nginx:
         container_name: nginx_kontinent
@@ -99,7 +110,23 @@ services:
         restart: on-failure
         ports:
             - "80:80"
+        networks:
+            - frontend
+            - backend
 volumes:
     redis_data:
     volume_static:
     media_volume:
+
+networks:
+    backend:
+        driver: bridge
+        driver_opts:
+            com.docker.network.driver.mtu: 1450 # Option from REG.ru
+    database:
+        driver: bridge
+        internal: true
+    queue:
+        driver: bridge
+    frontend:
+        driver: bridge
