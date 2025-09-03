@@ -130,6 +130,7 @@ class VideoContentModel(ContentFileBaseModel):
                 args=(task_process_video_upload,),
                 kwargs=kwargs_video,
             ).start()
+
         if hasattr(self, "video_path") and self.upload_status != "completed":
             self.upload_status = "processing"
             self.set_video_file(self.video_path)
@@ -139,54 +140,7 @@ class VideoContentModel(ContentFileBaseModel):
                 file_name = f"{self._video_file.name}".replace(
                     video_title, f"{uuid.uuid4()}_{video_title}"
                 )
-                if not self.id:
-                    file_path = self.video_path.name if self.video_path else None
-                    # Disconnection the field of file
-                    old_video_path = None
-                    if self.video_path:
-                        old_video_path = self.video_path
-                        self.video_path = None
-                    with transaction.atomic():
-                        try:
-                            # Records thi line in db
-                            super().save(*args, **kwargs)
-                            if old_video_path:
-                                # Records the field 'video_path' without saving of file to the server
-                                self.video_path = old_video_path
-                                path_template = (
-                                    f"{datetime.now().strftime("%Y/%m/%d/")}video/"
-                                )
-                                generate_filepath(path_template, self.video_path.name)
-                                self.__class__.objects.filter(pk=self.pk).update(
-                                    video_path=MEDIA_URL.lstrip("/")
-                                    + path_template
-                                    + file_path
-                                )
-                        except Exception as error:
-                            log.error(
-                                "%s: ERROR => %s",
-                                (
-                                    VideoContentModel.__class__.__name__
-                                    + "."
-                                    + self.save.__name__,
-                                    error,
-                                ),
-                            )
-
-                else:
-                    kwargs_video = {
-                        "title": self.title,
-                        "counter": self.counter,
-                        "order": self.order,
-                        "content_type": self.content_type,
-                        "video_url": self.video_url,
-                        "subtitles_url": self.subtitles_url,
-                        "video_path": self.video_path,
-                        "is_active": self.is_active,
-                        "upload_status": self.upload_status,
-                    }
-                    transaction_update("content_videocontentmodel", self.id, **kwargs_video)
-
+                self.handler_video_file(*args, **kwargs)
                 # Temporary file
                 temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
                 kwargs_video = {
@@ -209,6 +163,55 @@ class VideoContentModel(ContentFileBaseModel):
                 log.error("%s: ERROR => %s", (VideoContentModel.__class__.__name__
                                                   + "."
                                                   + self.save.__name__, error))
+
+    def handler_video_file(self, *args, **kwargs) -> None:
+        if not self.id:
+            file_path = self.video_path.name if self.video_path else None
+            # Disconnection the field of file
+            old_video_path = None
+            if self.video_path:
+                old_video_path = self.video_path
+                self.video_path = None
+            with transaction.atomic():
+                try:
+                    # Records thi line in db
+                    super().save(*args, **kwargs)
+                    if old_video_path:
+                        # Records the field 'video_path' without saving of file to the server
+                        self.video_path = old_video_path
+                        path_template = (
+                            f"{datetime.now().strftime("%Y/%m/%d/")}video/"
+                        )
+                        generate_filepath(path_template, self.video_path.name)
+                        self.__class__.objects.filter(pk=self.pk).update(
+                            video_path=MEDIA_URL.lstrip("/")
+                                       + path_template
+                                       + file_path
+                        )
+                except Exception as error:
+                    log.error(
+                        "%s: ERROR => %s",
+                        (
+                            VideoContentModel.__class__.__name__
+                            + "."
+                            + self.save.__name__,
+                            error,
+                        ),
+                    )
+
+        else:
+            kwargs_video = {
+                "title": self.title,
+                "counter": self.counter,
+                "order": self.order,
+                "content_type": self.content_type,
+                "video_url": self.video_url,
+                "subtitles_url": self.subtitles_url,
+                "video_path": self.video_path,
+                "is_active": self.is_active,
+                "upload_status": self.upload_status,
+            }
+            transaction_update("content_videocontentmodel", self.id, **kwargs_video)
 
     def set_video_file(self, file):
         """Method for sending a file to the initial file's processing"""
@@ -307,53 +310,8 @@ class AudioContentModel(ContentFileBaseModel):
                 file_name = f"{self._audio_file.name}".replace(
                     video_title, f"{uuid.uuid4()}_{video_title}"
                 )
-                if not self.id:
-                    file_path = self.audio_path.name if self.audio_path else None
-                    # Disconnection the field of file
-                    old_audio_path = None
-                    if self.audio_path:
-                        old_audio_path = self.audio_path
-                        self.audio_path = None
-                    with transaction.atomic():
-                        try:
-                            # Records thi line in db
-                            super().save(*args, **kwargs)
-                            if old_audio_path:
-                                # Records the field 'audio_path' without saving of file to the server
-                                self.audio_path = old_audio_path
-                                path_template = (
-                                    f"{datetime.now().strftime("%Y/%m/%d/")}video/"
-                                )
-                                generate_filepath(path_template, self.audio_path.name)
-                                self.__class__.objects.filter(pk=self.pk).update(
-                                    audio_path=MEDIA_URL.lstrip("/")
-                                    + path_template
-                                    + file_path
-                                )
-                        except Exception as error:
-                            log.error(
-                                "%s: ERROR => %s",
-                                (
-                                    VideoContentModel.__class__.__name__
-                                    + "."
-                                    + self.save.__name__,
-                                    error,
-                                ),
-                            )
 
-                else:
-                    kwargs_audio = {
-                        "title": self.title,
-                        "counter": self.counter,
-                        "order": self.order,
-                        "content_type": self.content_type,
-                        "audio_url": self.audio_url,
-                        "audio_path": self.audio_path,
-                        "is_active": self.is_active,
-                        "upload_status": self.upload_status,
-                    }
-                    transaction_update("content_audiocontentmodel", self.id, **kwargs_audio)
-
+                self.handler_video_file(*args, **kwargs)
                 # Temporary file
                 temp_path = f'{MEDIA_URL.lstrip("/")}{file_name.split("/video/")[-1]}'
                 kwargs_audio = {
@@ -375,6 +333,54 @@ class AudioContentModel(ContentFileBaseModel):
             log.error("%s: ERROR => %s", (AudioContentModel.__class__.__name__
                                           + "."
                                           + self.save.__name__, error))
+
+    def handler_video_file(self, *args, **kwargs) -> None:
+        if not self.id:
+            file_path = self.audio_path.name if self.audio_path else None
+            # Disconnection the field of file
+            old_audio_path = None
+            if self.audio_path:
+                old_audio_path = self.audio_path
+                self.audio_path = None
+            with transaction.atomic():
+                try:
+                    # Records thi line in db
+                    super().save(*args, **kwargs)
+                    if old_audio_path:
+                        # Records the field 'audio_path' without saving of file to the server
+                        self.audio_path = old_audio_path
+                        path_template = (
+                            f"{datetime.now().strftime("%Y/%m/%d/")}video/"
+                        )
+                        generate_filepath(path_template, self.audio_path.name)
+                        self.__class__.objects.filter(pk=self.pk).update(
+                            audio_path=MEDIA_URL.lstrip("/")
+                                       + path_template
+                                       + file_path
+                        )
+                except Exception as error:
+                    log.error(
+                        "%s: ERROR => %s",
+                        (
+                            VideoContentModel.__class__.__name__
+                            + "."
+                            + self.save.__name__,
+                            error,
+                        ),
+                    )
+
+        else:
+            kwargs_audio = {
+                "title": self.title,
+                "counter": self.counter,
+                "order": self.order,
+                "content_type": self.content_type,
+                "audio_url": self.audio_url,
+                "audio_path": self.audio_path,
+                "is_active": self.is_active,
+                "upload_status": self.upload_status,
+            }
+            transaction_update("content_audiocontentmodel", self.id, **kwargs_audio)
 
     def set_audio_file(self, file):
         """Method for sending a file to the initial file's processing"""
