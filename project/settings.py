@@ -27,7 +27,7 @@ if not SECRET_KEY:
     raise ValueError("SECRET_KEY must be set in environment variables")
 
 ALLOWED_HOSTS = [
-    f"{DB_TO_REMOTE_HOST}",
+    '83.166.245.209',
     '127.0.0.1',
     '0.0.0.0',
 ]
